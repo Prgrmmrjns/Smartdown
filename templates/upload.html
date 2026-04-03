@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smartdown</title>
+    <link rel="stylesheet" href="/static/vendor/katex.min.css" />
+    <style>
+      :root {
+        --bg: #0f1419;
+        --surface: #1a2332;
+        --border: #2d3a4d;
+        --text: #e7ecf3;
+        --muted: #8b9cb3;
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --danger: #f87171;
+        --radius: 12px;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(1200px 600px at 20% -10%, #1e3a5f 0%, transparent 55%),
+          radial-gradient(900px 500px at 100% 0%, #2d1f4e 0%, transparent 50%), var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 4rem;
+      }
+      h1 {
+        font-size: clamp(1.75rem, 4vw, 2.25rem);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.5rem;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 2rem;
+        max-width: 42rem;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .drop {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      .drop:hover,
+      .drop.dragover {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.06);
+      }
+      .drop strong {
+        color: var(--text);
+      }
+      .drop input[type="file"] {
+        display: none;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-top: 1.25rem;
+      }
+      button,
+      .btn {
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 10px;
+        padding: 0.65rem 1.25rem;
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+        transition: background 0.2s, opacity 0.2s;
+      }
+      button:hover:not(:disabled),
+      .btn:hover:not(:disabled) {
+        background: var(--accent-hover);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      button.secondary:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .file-name {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .err {
+        color: var(--danger);
+        margin-top: 1rem;
+        font-size: 0.95rem;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .results {
+        margin-top: 0.5rem;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .preview {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 1rem;
+        line-height: 1.65;
+        padding: 1.25rem 1.5rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: #121820;
+        max-height: min(70vh, 900px);
+        overflow: auto;
+      }
+      .preview img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 0.75rem 0;
+      }
+      .preview pre,
+      .preview code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.88em;
+      }
+      .preview pre {
+        padding: 1rem;
+        overflow-x: auto;
+        border-radius: 8px;
+        background: #0a0e14;
+        border: 1px solid var(--border);
+      }
+      .preview h1,
+      .preview h2,
+      .preview h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+      .preview table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+      .preview th,
+      .preview td {
+        border: 1px solid var(--border);
+        padding: 0.5rem 0.75rem;
+      }
+      .spinner {
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: -2px;
+        margin-right: 0.5rem;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .options {
+        margin-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .options label {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        cursor: pointer;
+        color: var(--text);
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+      .options input {
+        margin-top: 0.2rem;
+        flex-shrink: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Smartdown</h1>
+      <p class="sub">
+        Turn a PDF into clean Markdown with figures and equation images. Preview here, then download
+        <code>converted.md</code> plus an <code>images/</code> folder in a ZIP.
+      </p>
+
+      <div class="panel">
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose PDF file">
+          <input type="file" id="file" accept=".pdf,application/pdf,application/x-pdf" />
+          <strong>Drop a PDF here</strong>
+          <span style="color: var(--muted); display: block; margin-top: 0.35rem">or click to browse</span>
+        </div>
+        <div class="row">
+          <button type="button" id="convert" disabled>Convert</button>
+          <span class="file-name" id="fileLabel">No file selected</span>
+        </div>
+        <div class="options" aria-label="Cleanup options">
+          <label>
+            <input type="checkbox" id="optStripPages" checked />
+            <span>Remove page numbers (footer lines like <code>12</code>, <code>Page 3</code>, <code>- 5 -</code>)</span>
+          </label>
+          <label>
+            <input type="checkbox" id="optStripCites" checked />
+            <span>Remove citation brackets (<code>[1]</code>, <code>[2, 3]</code>, ranges) and drop the References / Bibliography section</span>
+          </label>
+        </div>
+        <div class="err hidden" id="error"></div>
+      </div>
+
+      <div class="panel results hidden" id="results">
+        <div class="toolbar">
+          <button type="button" id="dlZip">Download ZIP (MD + images)</button>
+          <button type="button" class="secondary" id="dlMd">Download Markdown only</button>
+          <button type="button" class="secondary" id="copyMd">Copy Markdown</button>
+        </div>
+        <h2 style="margin: 0 0 0.75rem; font-size: 1.1rem">Preview</h2>
+        <div class="preview" id="preview"></div>
+      </div>
+    </div>
+
+    <script src="/static/vendor/katex.min.js"></script>
+    <script src="/static/vendor/texmath.browser.js"></script>
+    <script src="/static/vendor/markdown-it.min.js"></script>
+    <script src="/static/vendor/purify.min.js"></script>
+    <script src="/static/vendor/jszip.min.js"></script>
+    <script>
+      (function () {
+        function apiUrl(path) {
+          return new URL(path, window.location.href).toString();
+        }
+
+        function isPdfFile(f) {
+          if (!f || !f.name) return false;
+          const lower = f.name.toLowerCase();
+          if (lower.endsWith(".pdf")) return true;
+          const t = (f.type || "").toLowerCase();
+          return t === "application/pdf" || t === "application/x-pdf";
+        }
+
+        function formatApiError(data, res) {
+          if (res.status === 413) {
+            return "Upload too large for this host (try a smaller PDF or check server / platform limits).";
+          }
+          const d = data && data.detail;
+          if (Array.isArray(d)) {
+            return d
+              .map(function (x) {
+                return typeof x === "string" ? x : x && x.msg ? x.msg : JSON.stringify(x);
+              })
+              .join("; ");
+          }
+          if (d != null && typeof d === "object") {
+            return JSON.stringify(d);
+          }
+          if (typeof d === "string") return d;
+          return res.statusText || "Conversion failed";
+        }
+
+        if (
+          typeof window.markdownit !== "function" ||
+          typeof window.markdownitTexmath !== "function" ||
+          !window.katex ||
+          !window.DOMPurify ||
+          !window.JSZip
+        ) {
+          var err = document.getElementById("error");
+          err.textContent =
+            "Preview libraries failed to load. Ensure /static/vendor assets are deployed with the app.";
+          err.classList.remove("hidden");
+          return;
+        }
+
+        /* markdown-it-texmath parses $...$ / $$...$$ / \\(...\\) / \\[...\\] before emphasis, so _ and * inside math stay intact */
+        var md = window.markdownit({ html: false, linkify: true, typographer: false });
+        md.use(window.markdownitTexmath, {
+          engine: window.katex,
+          delimiters: ["dollars", "brackets"],
+          katexOptions: { throwOnError: false, output: "html" },
+        });
+        var DOMPurify = window.DOMPurify;
+        var JSZip = window.JSZip;
+
+        var drop = document.getElementById("drop");
+        var fileInput = document.getElementById("file");
+        var convertBtn = document.getElementById("convert");
+        var fileLabel = document.getElementById("fileLabel");
+        var errorEl = document.getElementById("error");
+        var resultsEl = document.getElementById("results");
+        var previewEl = document.getElementById("preview");
+        var dlZip = document.getElementById("dlZip");
+        var dlMd = document.getElementById("dlMd");
+        var copyMd = document.getElementById("copyMd");
+
+        var selectedFile = null;
+        var lastMarkdown = "";
+        var lastImages = {};
+        var lastBase = "converted";
+
+        function showError(msg) {
+          errorEl.textContent = msg;
+          errorEl.classList.toggle("hidden", !msg);
+        }
+
+        function normalizeImageKey(rawPath) {
+          var path = rawPath.split("?")[0].trim().replace(/\\/g, "/");
+          if (path.indexOf("images/") === 0) return path;
+          var i = path.indexOf("images/");
+          if (i >= 0) return path.slice(i);
+          return path;
+        }
+
+        function inlineImages(markdown, images) {
+          return markdown.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function (full, alt, rawPath) {
+            var key = normalizeImageKey(rawPath);
+            var b64 = images[key];
+            if (!b64) return full;
+            return "![" + alt + "](data:image/png;base64," + b64 + ")";
+          });
+        }
+
+        function renderPreview(html) {
+          previewEl.innerHTML = DOMPurify.sanitize(html, {
+            USE_PROFILES: { html: true },
+            ADD_TAGS: ["eq", "eqn", "section"],
+            ADD_ATTR: ["class", "style", "aria-hidden", "role", "xmlns"],
+          });
+        }
+
+        function setFile(file) {
+          selectedFile = file;
+          convertBtn.disabled = !file;
+          fileLabel.textContent = file ? file.name : "No file selected";
+        }
+
+        drop.addEventListener("click", function (e) {
+          if (e.target === fileInput) return;
+          fileInput.click();
+        });
+        drop.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            fileInput.click();
+          }
+        });
+        ["dragenter", "dragover"].forEach(function (ev) {
+          drop.addEventListener(ev, function (e) {
+            e.preventDefault();
+            drop.classList.add("dragover");
+          });
+        });
+        ["dragleave", "drop"].forEach(function (ev) {
+          drop.addEventListener(ev, function (e) {
+            e.preventDefault();
+            drop.classList.remove("dragover");
+          });
+        });
+        drop.addEventListener("drop", function (e) {
+          var f = e.dataTransfer.files && e.dataTransfer.files[0];
+          if (f && isPdfFile(f)) {
+            setFile(f);
+            showError("");
+          } else if (f) {
+            showError("Please drop a PDF file (.pdf).");
+          }
+        });
+        fileInput.addEventListener("change", function () {
+          var f = fileInput.files && fileInput.files[0];
+          if (!f) {
+            setFile(null);
+            return;
+          }
+          if (!isPdfFile(f)) {
+            showError("Please choose a PDF file (.pdf).");
+            fileInput.value = "";
+            setFile(null);
+            return;
+          }
+          setFile(f);
+          showError("");
+        });
+
+        convertBtn.addEventListener("click", function () {
+          if (!selectedFile) return;
+          showError("");
+          resultsEl.classList.add("hidden");
+          convertBtn.disabled = true;
+          var label = convertBtn.textContent;
+          convertBtn.innerHTML = '<span class="spinner" aria-hidden="true"></span>Converting…';
+
+          var body = new FormData();
+          body.append("file", selectedFile, selectedFile.name);
+          body.append(
+            "strip_page_numbers",
+            document.getElementById("optStripPages").checked ? "true" : "false"
+          );
+          body.append(
+            "strip_citations",
+            document.getElementById("optStripCites").checked ? "true" : "false"
+          );
+          fetch(apiUrl("/api/convert"), { method: "POST", body })
+            .then(function (res) {
+              var ct = (res.headers.get("content-type") || "").toLowerCase();
+              return (ct.indexOf("application/json") >= 0 ? res.json() : Promise.resolve({})).then(function (data) {
+                return { res: res, data: data };
+              });
+            })
+            .then(function (_ref) {
+              var res = _ref.res;
+              var data = _ref.data;
+              if (!res.ok) {
+                throw new Error(formatApiError(data, res));
+              }
+              lastMarkdown = data.markdown || "";
+              lastImages = data.images || {};
+              lastBase =
+                (data.filename_base || "converted").replace(/[^\w\-]+/g, "_") || "converted";
+
+              var forPreview = inlineImages(lastMarkdown, lastImages);
+              var dirty = md.render(forPreview);
+              renderPreview(dirty);
+              resultsEl.classList.remove("hidden");
+            })
+            .catch(function (e) {
+              if (e instanceof TypeError && e.message === "Failed to fetch") {
+                showError(
+                  "Network error: is the server running? Open this app via the server URL (not file://), e.g. http://127.0.0.1:8000"
+                );
+              } else {
+                showError(e.message || String(e));
+              }
+            })
+            .finally(function () {
+              convertBtn.textContent = label;
+              convertBtn.disabled = !selectedFile;
+            });
+        });
+
+        function downloadBlob(blob, filename) {
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }
+
+        dlMd.addEventListener("click", function () {
+          if (!lastMarkdown) return;
+          downloadBlob(
+            new Blob([lastMarkdown], { type: "text/markdown;charset=utf-8" }),
+            lastBase + ".md"
+          );
+        });
+
+        dlZip.addEventListener("click", function () {
+          if (!lastMarkdown) return;
+          var zip = new JSZip();
+          zip.file("converted.md", lastMarkdown);
+          var folder = zip.folder("images");
+          Object.keys(lastImages).forEach(function (relPath) {
+            var b64 = lastImages[relPath];
+            var name = relPath.replace(/^images\//, "");
+            if (!name || !folder) return;
+            var bin = Uint8Array.from(atob(b64), function (c) {
+              return c.charCodeAt(0);
+            });
+            folder.file(name, bin);
+          });
+          zip.generateAsync({ type: "blob" }).then(function (blob) {
+            downloadBlob(blob, lastBase + ".zip");
+          });
+        });
+
+        copyMd.addEventListener("click", function () {
+          if (!lastMarkdown) return;
+          navigator.clipboard.writeText(lastMarkdown).then(
+            function () {
+              copyMd.textContent = "Copied!";
+              setTimeout(function () {
+                copyMd.textContent = "Copy Markdown";
+              }, 2000);
+            },
+            function () {
+              showError("Could not copy to clipboard.");
+            }
+          );
+        });
+      })();
+    </script>
+  </body>
+</html>
