@@ -1,2 +1,15 @@
 .vercel
 .venv
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+.idea/
+.vscode/
+*.egg-info/
+dist/
+build/

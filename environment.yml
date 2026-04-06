@@ -1,4 +1,4 @@
-name: pdf2md
+name: smartdown
 channels:
   - conda-forge
 dependencies:

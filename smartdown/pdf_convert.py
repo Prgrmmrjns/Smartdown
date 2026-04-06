@@ -1,38 +1,25 @@
+"""PDF → Markdown conversion and cleanup helpers."""
 import base64
 import os
 import re
-import shutil
 import tempfile
 from pathlib import Path
-from typing import Annotated
+from typing import Literal
 
 import fitz
 import pymupdf4llm
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 
-BASE_DIR = Path(__file__).resolve().parent
+# pymupdf4llm ≥1.27 enables pymupdf.layout + OCR by default. That runs Tesseract on
+# small regions (stderr: "Image too small to scale", "Line cannot be recognized") and
+# often yields empty or broken Markdown for normal text PDFs. Legacy rag mode matches
+# this module's figure/math post-processing.
+try:
+    pymupdf4llm.use_layout(False)
+except Exception:
+    pass
 
-app = FastAPI(title="Smartdown")
-
-FIGURE_MIN_WIDTH = 200
-FIGURE_MIN_HEIGHT = 150
-IMAGES_DIR = "images"
-
-
-def cleanup_paths(paths: list):
-    for path in paths:
-        if not path or not os.path.exists(path):
-            continue
-        try:
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            else:
-                os.remove(path)
-        except OSError:
-            pass
-
+from smartdown.config import FIGURE_MIN_HEIGHT, FIGURE_MIN_WIDTH, IMAGES_DIR
+from smartdown.fs_utils import cleanup_paths, temp_root
 
 def _extract_figure_images(
     doc: fitz.Document, page: fitz.Page, img_dir: str, page_num: int
@@ -81,6 +68,8 @@ def _char_is_math_symbol(ch: str) -> bool:
     if 0x27C0 <= o <= 0x27FF:
         return True
     if ch in "∂∇∞±×·÷≤≥≠≈∈∑∫√":
+        return True
+    if 0x03B1 <= o <= 0x03C9 or 0x0391 <= o <= 0x03A9:
         return True
     return False
 
@@ -149,6 +138,74 @@ def _extract_math_equation_images(
     return md_lines
 
 
+_SINGLE_LETTER_ITALIC_FOR_CODE_RE = re.compile(
+    r"(?<!\*)\*([a-zA-Z])\*(?!\*)",
+)
+
+
+def _math_single_italic_letters_to_inline_code(md: str) -> str:
+    """Turn *x* (single Latin letter) into `x` for mathy prose (see e.g. paper .md exports)."""
+    return _SINGLE_LETTER_ITALIC_FOR_CODE_RE.sub(r"`\1`", md)
+
+
+_OMITTED_PICTURE_PLACEHOLDER_RE = re.compile(
+    r"(?:\*\*)?\s*==>\s*picture\s*\[[^\]]+\]\s*intentionally omitted\s*<==(?:\*\*)?\s*",
+    re.IGNORECASE,
+)
+
+_MD_IMG_LINK_RE = re.compile(r"!\[([^\]]*)\]\(images/([^)]+)\)", re.IGNORECASE)
+
+
+def _strip_pymupdf_picture_omitted_placeholders(md: str) -> str:
+    """Remove PyMuPDF4LLM placeholders when raster output was disabled (we avoid that path)."""
+    return _OMITTED_PICTURE_PLACEHOLDER_RE.sub("", md)
+
+
+def _looks_like_equation_raster(w: int, h: int) -> bool:
+    """Shallow wide strips or small blocks typical of layout 'formula' crops."""
+    if w < 16 or h < 10:
+        return True
+    if h <= 95 and w >= 72:
+        return True
+    if h <= 240 and w >= h * 2:
+        return True
+    return False
+
+
+def _strip_equation_like_raster_refs(md: str, img_dir: str) -> str:
+    """Drop markdown links to equation-sized PNGs (keep large figure extracts)."""
+
+    def repl(m: re.Match[str]) -> str:
+        fname = m.group(2).replace("\\", "/").split("/")[-1]
+        if "_math" in fname:
+            try:
+                os.remove(os.path.join(img_dir, fname))
+            except OSError:
+                pass
+            return ""
+        if fname.startswith("page") and "_fig" in fname:
+            return m.group(0)
+        path = os.path.join(img_dir, fname)
+        if not os.path.isfile(path):
+            return m.group(0)
+        try:
+            pix = fitz.Pixmap(path)
+            w, h = pix.width, pix.height
+        except Exception:
+            return m.group(0)
+        if w >= FIGURE_MIN_WIDTH and h >= FIGURE_MIN_HEIGHT:
+            return m.group(0)
+        if _looks_like_equation_raster(w, h):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+            return ""
+        return m.group(0)
+
+    return _MD_IMG_LINK_RE.sub(repl, md)
+
+
 def _strip_math_only_lines(md: str) -> str:
     """Drop lines that are mostly Unicode math (replaced by equation images)."""
     out: list[str] = []
@@ -168,6 +225,84 @@ def _strip_math_only_lines(md: str) -> str:
         if sym >= 4 and sym >= n * 0.45:
             continue
         out.append(line)
+    return "\n".join(out)
+
+
+_EQ_NUM_TAIL_RE = re.compile(r"\(\d+\)\s*$")
+
+
+def _line_is_display_equation_candidate(line: str) -> bool:
+    """Heuristic: line is mostly math symbols / equation-like (for fenced ``` blocks)."""
+    s = line.strip()
+    if not s or len(s) < 2:
+        return False
+    if s.startswith("#") or s.startswith("![") or s.startswith("|"):
+        return False
+    if s.startswith("http://") or s.startswith("https://"):
+        return False
+    if s.startswith(">"):
+        return False
+    n = len(s)
+    sym = sum(1 for c in s if _char_is_math_symbol(c))
+    if sym >= 4 and sym >= n * 0.32:
+        return True
+    if _EQ_NUM_TAIL_RE.search(s) and ("=" in s or sym >= 2):
+        return True
+    if "=" in s and sym >= 2 and n <= 140:
+        return True
+    letters = sum(1 for c in s if c.isalpha())
+    if letters > 55 and sym < 4:
+        return False
+    if sym >= 3 and n <= 110 and ("=" in s or "∑" in s or "Σ" in s or "∫" in s):
+        return True
+    return False
+
+
+def wrap_display_equations_in_fenced_code(md: str) -> str:
+    """Wrap consecutive display-style equation lines in plain ``` fences (no language tag)."""
+    lines = md.replace("\r\n", "\n").split("\n")
+    out: list[str] = []
+    i = 0
+    in_fence = False
+
+    while i < len(lines):
+        raw = lines[i]
+        lstripped = raw.lstrip()
+        if lstripped.startswith("```"):
+            in_fence = not in_fence
+            out.append(raw)
+            i += 1
+            continue
+        if in_fence:
+            out.append(raw)
+            i += 1
+            continue
+
+        if not _line_is_display_equation_candidate(raw):
+            out.append(raw)
+            i += 1
+            continue
+
+        buf: list[str] = []
+        while i < len(lines):
+            r2 = lines[i]
+            if r2.lstrip().startswith("```"):
+                break
+            if not r2.strip():
+                break
+            if not _line_is_display_equation_candidate(r2):
+                break
+            buf.append(r2.rstrip())
+            i += 1
+        if buf:
+            out.append("```")
+            out.extend(buf)
+            out.append("```")
+            continue
+
+        out.append(raw)
+        i += 1
+
     return "\n".join(out)
 
 
@@ -228,7 +363,7 @@ def apply_note_cleanups(
     md: str,
     *,
     strip_page_numbers: bool = True,
-    strip_citations: bool = True,
+    strip_citations: bool = False,
 ) -> str:
     if strip_citations:
         md = _strip_citation_brackets(md)
@@ -238,7 +373,7 @@ def apply_note_cleanups(
     return _collapse_blank_lines(md)
 
 
-def _parse_form_bool(value: str | None, default: bool = True) -> bool:
+def parse_form_bool(value: str | None, default: bool = True) -> bool:
     if value is None or value == "":
         return default
     return str(value).lower() in ("true", "1", "on", "yes")
@@ -249,9 +384,16 @@ def convert_pdf(
     output_dir: str,
     *,
     strip_page_numbers: bool = True,
-    strip_citations: bool = True,
+    strip_citations: bool = False,
+    equation_handling: Literal["markdown", "image"] = "markdown",
+    math_inline_code: bool = True,
 ) -> tuple[str, str]:
-    """Convert PDF to Markdown with images saved to output_dir/images/.
+    """Convert PDF to Markdown.
+
+    PyMuPDF4LLM always uses write_images=True and force_text=True so formula regions are
+    not replaced by "picture omitted" placeholders. equation_handling "image" keeps
+    equation raster crops and formula PNGs; "markdown" strips equation-shaped images
+    and applies optional *x* -> `x`.
 
     Returns (md_file_path, images_dir_path).
     """
@@ -259,13 +401,14 @@ def convert_pdf(
     os.makedirs(img_dir, exist_ok=True)
 
     doc = fitz.open(pdf_path)
+    math_as_images = equation_handling == "image"
 
     chunks = pymupdf4llm.to_markdown(
         pdf_path,
         write_images=True,
         image_path=img_dir,
         image_format="png",
-        force_text=False,
+        force_text=True,
         page_chunks=True,
     )
 
@@ -299,30 +442,39 @@ def convert_pdf(
             else:
                 page_md += "\n\n" + "\n\n".join(ref for _, ref in figure_imgs) + "\n\n"
 
-        math_imgs = _extract_math_equation_images(page, img_dir, page_num)
-        if math_imgs:
-            page_md = _strip_math_only_lines(page_md)
-            page_md += "\n\n" + "\n\n".join(math_imgs) + "\n\n"
+        if math_as_images:
+            math_imgs = _extract_math_equation_images(page, img_dir, page_num)
+            if math_imgs:
+                page_md = _strip_math_only_lines(page_md)
+                page_md += "\n\n" + "\n\n".join(math_imgs) + "\n\n"
 
         result_parts.append(page_md)
 
     doc.close()
 
+    md_text = "".join(result_parts)
+    md_text = _strip_pymupdf_picture_omitted_placeholders(md_text)
+    if not math_as_images:
+        md_text = _strip_equation_like_raster_refs(md_text, img_dir)
+
     _cleanup_images(img_dir)
 
     surviving = set(os.listdir(img_dir))
-    md_text = "".join(result_parts)
     md_text = re.sub(
         r"!\[.*?\]\(images/([^)]+)\)",
         lambda m: m.group(0) if m.group(1) in surviving else "",
         md_text,
     )
 
+    if equation_handling == "markdown" and math_inline_code:
+        md_text = _math_single_italic_letters_to_inline_code(md_text)
+
     md_text = apply_note_cleanups(
         md_text,
         strip_page_numbers=strip_page_numbers,
         strip_citations=strip_citations,
     )
+    md_text = wrap_display_equations_in_fenced_code(md_text)
 
     md_path = os.path.join(output_dir, "converted.md")
     with open(md_path, "w", encoding="utf-8") as f:
@@ -331,56 +483,43 @@ def convert_pdf(
     return md_path, img_dir
 
 
-def _temp_root() -> str:
-    return os.environ.get("TMPDIR") or tempfile.gettempdir()
+def extract_plain_text(pdf_path: str) -> str:
+    """Extract plain text from a PDF using PyMuPDF (no markdown conversion)."""
+    doc = fitz.open(pdf_path)
+    pages: list[str] = []
+    for page in doc:
+        pages.append(page.get_text("text"))
+    doc.close()
+    return "\n\n".join(p.strip() for p in pages if p.strip())
 
 
-@app.get("/", response_class=HTMLResponse)
-async def index():
-    # Static HTML (no Jinja). Avoids Jinja2/Starlette template cache issues on Vercel.
-    html = (BASE_DIR / "templates" / "upload.html").read_text(encoding="utf-8")
-    return HTMLResponse(
-        content=html,
-        media_type="text/html; charset=utf-8",
-    )
+def parse_equation_handling(value: str | None) -> Literal["markdown", "image"]:
+    v = (value or "markdown").strip().lower()
+    if v == "markdown":
+        return "markdown"
+    return "image"
 
 
-@app.post("/api/convert")
-async def api_convert(
-    file: UploadFile = File(...),
-    strip_page_numbers: Annotated[str, Form()] = "true",
-    strip_citations: Annotated[str, Form()] = "true",
-):
-    name = (file.filename or "").lower()
-    if not name.endswith(".pdf"):
-        raise HTTPException(
-            status_code=400, detail="Please upload a file with a .pdf extension."
-        )
-
-    temp_pdf_path = None
-    work_dir = None
-    tmp = _temp_root()
+def _convert_pdf_at_path_to_markdown_and_images(
+    pdf_path: str,
+    *,
+    strip_page_numbers: bool,
+    strip_citations: bool,
+    equation_handling: Literal["markdown", "image"] = "markdown",
+    math_inline_code: bool = True,
+) -> tuple[str, dict[str, str]]:
+    work_dir = tempfile.mkdtemp(dir=temp_root())
     try:
-        with tempfile.NamedTemporaryFile(
-            delete=False, suffix=".pdf", dir=tmp
-        ) as temp_pdf:
-            content = await file.read()
-            if not content:
-                raise HTTPException(status_code=400, detail="Empty file.")
-            temp_pdf.write(content)
-            temp_pdf_path = temp_pdf.name
-
-        work_dir = tempfile.mkdtemp(dir=tmp)
         md_path, img_dir = convert_pdf(
-            temp_pdf_path,
+            pdf_path,
             work_dir,
-            strip_page_numbers=_parse_form_bool(strip_page_numbers, True),
-            strip_citations=_parse_form_bool(strip_citations, True),
+            strip_page_numbers=strip_page_numbers,
+            strip_citations=strip_citations,
+            equation_handling=equation_handling,
+            math_inline_code=math_inline_code,
         )
-
         with open(md_path, encoding="utf-8") as f:
             markdown_text = f.read()
-
         images: dict[str, str] = {}
         if os.path.isdir(img_dir):
             for img_name in sorted(os.listdir(img_dir)):
@@ -390,24 +529,6 @@ async def api_convert(
                 key = f"{IMAGES_DIR}/{img_name.replace(chr(92), '/')}"
                 with open(ip, "rb") as bf:
                     images[key] = base64.standard_b64encode(bf.read()).decode("ascii")
-
-        return JSONResponse(
-            {
-                "markdown": markdown_text,
-                "images": images,
-                "filename_base": Path(file.filename or "document").stem,
-            }
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        return markdown_text, images
     finally:
-        cleanup_paths([temp_pdf_path, work_dir])
-
-
-app.mount(
-    "/static",
-    StaticFiles(directory=str(BASE_DIR / "static")),
-    name="static",
-)
+        cleanup_paths([work_dir])
