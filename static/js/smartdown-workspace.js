@@ -363,17 +363,6 @@
               llmChoice.selectedIndex = 0;
             }
           }
-
-          if (llmOptionsHint) {
-            if (ollamaModelList().length === 0) {
-              llmOptionsHint.textContent =
-                "No Ollama models at " +
-                ((llmOptions && llmOptions.ollama_host) || "Ollama") +
-                ". Run `ollama serve`, pull a model, then refresh this page.";
-            } else {
-              llmOptionsHint.textContent = "";
-            }
-          }
           llmChoice.disabled = !llmChoice.options.length;
           syncProviderAuxUi();
         }
@@ -2201,7 +2190,7 @@
             btn.disabled = true;
             btn.textContent = "Extracting…";
           }
-          setAgentProgress(true, "OCR…");
+          setAgentProgress(true, "Converting PDF to Markdown…");
           fetch(apiUrl("/api/extract-markdown"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -2263,7 +2252,7 @@
           syncImportModeUi();
 
           openDocumentUI();
-          setAgentProgress(true, "OCR…");
+          setAgentProgress(true, "Converting PDF to Markdown…");
 
           importInFlight = true;
           syncImportActionButtons();
