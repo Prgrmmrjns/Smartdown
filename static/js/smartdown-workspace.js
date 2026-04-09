@@ -1,7 +1,12 @@
       (function () {
         function apiUrl(path) {
-          var rel = String(path || "").replace(/^\/+/, "");
-          return new URL(rel, window.location.href).toString();
+          var p = String(path || "").trim();
+          if (!p) return window.location.href;
+          // Paths starting with / must resolve from the site origin so /api/* is never nested under a page path.
+          if (p.charAt(0) === "/") {
+            return new URL(p, window.location.origin).toString();
+          }
+          return new URL(p, window.location.href).toString();
         }
 
         function isPdfFile(f) {
