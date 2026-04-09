@@ -135,14 +135,16 @@
         line-height: 1.35;
       }
 
+      /* Sidebar: File panel (PDF + exports) and AI panel (.sidebar-panel inside each section). */
       .sidebar-section {
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: rgba(0, 0, 0, 0.12);
-        padding: 0.65rem 0.7rem 0.75rem;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: transparent;
+        border-radius: 0;
       }
       .sidebar-section + .sidebar-section {
-        margin-top: 0.35rem;
+        margin-top: 0.45rem;
       }
       .sidebar-section-title {
         font-size: 0.62rem;
@@ -329,17 +331,6 @@
         background: rgba(0, 0, 0, 0.14);
         padding: 0.55rem 0.6rem 0.65rem;
       }
-      .use-ai-unified .use-ai-subtitle {
-        font-size: 0.68rem;
-        font-weight: 600;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin: 0.65rem 0 0.35rem;
-      }
-      .use-ai-unified .use-ai-subtitle:first-of-type {
-        margin-top: 0.35rem;
-      }
       .label-with-info {
         display: flex;
         align-items: center;
@@ -502,6 +493,9 @@
         padding-top: 0.75rem;
         border-top: 1px solid var(--border);
       }
+      .notion-export-panel .setup-info__tip {
+        width: min(320px, 92vw);
+      }
       .notion-export-heading {
         font-size: 0.72rem;
         font-weight: 600;
@@ -658,6 +652,61 @@
         margin-top: 0.5rem;
       }
 
+      #postMdExportsBlock button.block,
+      #workspaceMetaBlock button.block {
+        font-size: 0.76rem;
+        padding: 0.3rem 0.5rem;
+        border-radius: 6px;
+        line-height: 1.25;
+      }
+      #postMdExportsBlock .sidebar-actions {
+        gap: 0.28rem;
+        margin-top: 0.35rem;
+      }
+
+      .export-dropdown {
+        position: relative;
+        width: 100%;
+      }
+      .export-dropdown-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .export-dropdown-toggle .export-chevron {
+        opacity: 0.75;
+        font-size: 0.7rem;
+      }
+      .export-dropdown-panel {
+        position: absolute;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        margin-top: 0.25rem;
+        padding: 0.35rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #111923;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+      .export-dropdown-panel .export-menu-item {
+        width: 100%;
+        margin: 0.15rem 0;
+        text-align: left;
+        font-size: 0.76rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
+        line-height: 1.25;
+      }
+
+      #workspaceMetaBlock .doc-title {
+        font-size: 0.76rem;
+        margin-bottom: 0.35rem;
+        line-height: 1.3;
+      }
+
       .md-editor {
         width: 100%;
         box-sizing: border-box;
@@ -686,14 +735,14 @@
         background: rgba(0, 0, 0, 0.12);
         display: flex;
         flex-direction: column;
-        max-height: 280px;
+        max-height: min(58vh, 620px);
       }
       .sidebar-chat .chat-messages {
         flex: 1;
         overflow-y: auto;
         padding: 0.5rem 0.55rem;
-        min-height: 100px;
-        max-height: 160px;
+        min-height: 200px;
+        max-height: min(48vh, 480px);
         font-size: 0.78rem;
       }
       .chat-bubble {
@@ -712,6 +761,162 @@
         border: 1px solid var(--border);
         margin-right: 0.75rem;
       }
+      .chat-bubble.block-note .block-note-body {
+        font-size: 0.78rem;
+        line-height: 1.45;
+      }
+      .chat-bubble.block-note .block-note-body p {
+        margin: 0.25rem 0 0;
+      }
+      .chat-bubble.block-note .block-note-body p:first-child {
+        margin-top: 0;
+      }
+      .chat-bubble.block-note .block-note-body ul,
+      .chat-bubble.block-note .block-note-body ol {
+        margin: 0.35rem 0 0 1.1rem;
+        padding: 0;
+      }
+
+      .notion-doc.block-notes-on {
+        cursor: default;
+      }
+      .sd-doc-block {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.35rem;
+        border-radius: 8px;
+        transition: background 0.12s ease;
+        padding: 0.15rem 0.2rem;
+        margin: 0.1rem -0.2rem;
+      }
+      .block-notes-on .sd-doc-block:hover {
+        background: rgba(59, 130, 246, 0.06);
+      }
+      .block-notes-on .sd-doc-block.sd-selected {
+        outline: 2px solid rgba(59, 130, 246, 0.45);
+        outline-offset: 1px;
+      }
+      /* Custom toggle (not <input type="checkbox">) so content checkboxes don’t read as “two controls” */
+      .sd-block-select-toggle {
+        flex-shrink: 0;
+        width: 0.72rem;
+        height: 0.72rem;
+        min-width: 0.72rem;
+        margin: 0.56rem 0.1rem 0 0;
+        padding: 0;
+        border: 1.5px solid rgba(55, 53, 47, 0.45);
+        border-radius: 3px;
+        background: #fff;
+        cursor: pointer;
+        box-sizing: border-box;
+        position: relative;
+      }
+      .sd-block-select-toggle:hover {
+        border-color: rgba(59, 130, 246, 0.55);
+      }
+      .sd-block-select-toggle:focus-visible {
+        outline: 2px solid rgba(59, 130, 246, 0.45);
+        outline-offset: 1px;
+      }
+      .sd-block-select-toggle[aria-checked="true"] {
+        background: var(--accent, #2563eb);
+        border-color: var(--accent, #2563eb);
+      }
+      .sd-block-select-toggle[aria-checked="true"]::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 45%;
+        width: 0.22rem;
+        height: 0.38rem;
+        margin: -0.14rem 0 0 -0.08rem;
+        border: solid #fff;
+        border-width: 0 1.5px 1.5px 0;
+        transform: rotate(45deg);
+        box-sizing: border-box;
+      }
+      /* Hide task-list / pasted HTML checkboxes inside note body (optional; avoids duplicate boxes) */
+      .notion-doc.block-notes-on .sd-doc-block-inner input[type="checkbox"] {
+        display: none !important;
+      }
+      .sd-doc-block:has(.sd-block-select-toggle[aria-checked="true"]) {
+        background: rgba(59, 130, 246, 0.1);
+      }
+      /* First-line list marker sits in the gutter and can look like a second square */
+      .notion-doc.block-notes-on .sd-doc-block-inner > ul:first-child {
+        list-style: none;
+        padding-left: 0;
+        margin-left: 0;
+      }
+      .notion-doc.block-notes-on .sd-doc-block-inner > ul:first-child > li {
+        position: relative;
+        padding-left: 0.95em;
+      }
+      .notion-doc.block-notes-on .sd-doc-block-inner > ul:first-child > li::before {
+        content: "•";
+        position: absolute;
+        left: 0.1em;
+        font-weight: 600;
+        color: inherit;
+      }
+      .notion-doc.block-notes-on .sd-doc-block-inner > ol:first-child {
+        list-style-position: inside;
+        padding-left: 0;
+        margin-left: 0;
+      }
+      .sd-doc-block-inner {
+        flex: 1;
+        min-width: 0;
+      }
+      .sd-doc-block-inner[contenteditable="true"] {
+        outline: none;
+        cursor: text;
+      }
+      .sd-doc-block-inner[contenteditable="true"]:focus {
+        outline: 2px solid rgba(59, 130, 246, 0.28);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      .block-notes-panel .preset-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.35rem;
+      }
+      .block-notes-panel .preset-row button {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.45rem;
+      }
+
+      .sd-format-dialog {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0;
+        max-width: min(520px, 94vw);
+        background: var(--panel);
+        color: var(--text);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+      }
+      .sd-format-dialog::backdrop {
+        background: rgba(0, 0, 0, 0.5);
+      }
+      .sd-format-dialog-inner {
+        padding: 1rem 1.1rem 1.1rem;
+      }
+      .sd-format-dialog h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+      }
+      .sd-format-dialog-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: 0.65rem;
+      }
+
       .chat-bubble .who {
         font-size: 0.62rem;
         text-transform: uppercase;
@@ -727,8 +932,8 @@
         align-items: flex-end;
       }
       .chat-input-row textarea.field {
-        min-height: 40px;
-        max-height: 100px;
+        min-height: 52px;
+        max-height: 160px;
         margin: 0;
       }
 
@@ -863,7 +1068,6 @@
         border-radius: 0;
       }
 
-      /* Hidden textarea: canonical Markdown for API, export, assistant */
       .visually-hidden-md-store {
         position: absolute;
         width: 1px;
@@ -919,11 +1123,11 @@
         line-height: 1.55;
       }
 
-      .notion-doc.preview h1:first-child,
-      .notion-doc.preview > *:first-child {
+      .notion-doc.notes h1:first-child,
+      .notion-doc.notes > *:first-child {
         margin-top: 0;
       }
-      .notion-doc.preview h1 {
+      .notion-doc.notes h1 {
         font-size: 1.875rem;
         font-weight: 700;
         letter-spacing: -0.02em;
@@ -932,38 +1136,38 @@
         line-height: 1.2;
         color: #37352f;
       }
-      .notion-doc.preview h2 {
+      .notion-doc.notes h2 {
         font-size: 1.5rem;
         font-weight: 600;
         margin-top: 1.15em;
         margin-bottom: 0.15em;
         color: #37352f;
       }
-      .notion-doc.preview h3 {
+      .notion-doc.notes h3 {
         font-size: 1.2rem;
         font-weight: 600;
         margin-top: 0.95em;
         margin-bottom: 0.1em;
         color: #37352f;
       }
-      .notion-doc.preview p {
+      .notion-doc.notes p {
         margin: 0.3em 0;
       }
-      .notion-doc.preview ul,
-      .notion-doc.preview ol {
+      .notion-doc.notes ul,
+      .notion-doc.notes ol {
         margin: 0.3em 0;
         padding-left: 1.35em;
       }
-      .notion-doc.preview li {
+      .notion-doc.notes li {
         margin: 0.12em 0;
       }
-      .notion-doc.preview blockquote {
+      .notion-doc.notes blockquote {
         border-left: 3px solid #e3e2e0;
         margin: 0.45em 0;
         padding-left: 14px;
         color: #787774;
       }
-      .notion-doc.preview pre {
+      .notion-doc.notes pre {
         background: #f7f6f3;
         border: 1px solid #e3e2e0;
         border-radius: 4px;
@@ -973,48 +1177,125 @@
         overflow-x: auto;
         margin: 0.5em 0;
       }
-      .notion-doc.preview :not(pre) > code {
+      .notion-doc.notes :not(pre) > code {
         background: rgba(135, 131, 120, 0.15);
         padding: 0.12em 0.35em;
         border-radius: 4px;
         font-size: 0.88em;
         color: #c4554d;
       }
-      .notion-doc.preview img {
+      .notion-doc.notes img {
         border-radius: 4px;
         max-width: 100%;
         height: auto;
         margin: 0.45em 0;
       }
-      .notion-doc.preview table {
+      .notion-doc.notes table {
         border-collapse: collapse;
         width: 100%;
         margin: 0.45em 0;
         font-size: 14px;
       }
-      .notion-doc.preview th,
-      .notion-doc.preview td {
+      .notion-doc.notes th,
+      .notion-doc.notes td {
         border: 1px solid #e3e2e0;
         padding: 8px 10px;
       }
-      .notion-doc.preview hr {
+      .notion-doc.notes hr {
         border: none;
         border-top: 1px solid #e3e2e0;
         margin: 1.25em 0;
       }
-      .notion-doc.preview a {
+      .notion-doc.notes a {
         color: #0b6bcb;
         text-decoration: underline;
         text-underline-offset: 2px;
       }
 
-      .notion-doc.notion-editable[contenteditable="true"] {
-        cursor: text;
+      .notion-doc.notion-editable {
         min-height: 12rem;
       }
-      .notion-doc.notion-editable[contenteditable="true"]:focus {
-        outline: 2px solid rgba(11, 107, 203, 0.35);
-        outline-offset: 3px;
+
+      .preview-md-host {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .preview-md-host .notion-canvas {
+        flex: 1;
+        min-height: 0;
+      }
+
+      .workspace-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        background: #262625;
+      }
+      .workspace-docs {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .sidebar-panel-body > .use-ai-unified {
+        border: none;
+        background: transparent;
+        padding: 0.2rem 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+      }
+      .notes-section-heading {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .notes-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .tools-ai-chat .sidebar-chat {
+        max-height: min(62vh, 680px);
+      }
+      .sd-block-notes-toolbar {
+        flex-shrink: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.55rem;
+        border-bottom: 1px solid #e3e2e0;
+        background: #f7f6f3;
+      }
+      .sd-block-notes-toolbar button.secondary {
+        font-size: 0.74rem;
+        font-weight: 600;
+        padding: 0.35rem 0.55rem;
+        background: #2d2c29;
+        color: #ffffff;
+        border: 1px solid #1a1917;
+        border-radius: 6px;
+      }
+      .sd-block-notes-toolbar button.secondary:hover:not(:disabled) {
+        background: #454440;
+        border-color: #2d2c29;
+        color: #ffffff;
+      }
+      .sd-block-notes-toolbar button.block-action-delete {
+        background: #5c2020 !important;
+        color: #ffffff !important;
+        border-color: #3d1515 !important;
+      }
+      .sd-block-notes-toolbar button.block-action-delete:hover:not(:disabled) {
+        background: #7a2a2a !important;
+        border-color: #5c2020 !important;
+        color: #ffffff !important;
       }
 
       @media (max-width: 820px) {
@@ -1034,6 +1315,9 @@
         .main-stage {
           min-height: 70vh;
         }
+        .workspace-body {
+          flex-direction: column;
+        }
         .view-pane {
           min-height: 88px;
         }
@@ -1045,16 +1329,17 @@
       <aside class="sidebar" id="sidebar" aria-label="Smartdown tools">
         <div class="sidebar-brand">
           <h1>Smartdown</h1>
-          <p>PDF → Markdown, preview, optional AI.</p>
+          <p>The smart PDF to Markdown Converter</p>
         </div>
 
-        <section class="sidebar-section" aria-label="Import">
-          <details class="sidebar-panel" id="importPanelDetails" open>
-            <summary>
-              Import
-              <span class="summary-chevron" aria-hidden="true"></span>
-            </summary>
-            <div class="sidebar-panel-body">
+        <div id="sidebarDocTools">
+          <section class="sidebar-section" aria-label="File">
+            <details class="sidebar-panel" id="filePanelDetails" open>
+              <summary>
+                File
+                <span class="summary-chevron" aria-hidden="true"></span>
+              </summary>
+            <div class="sidebar-panel-body" id="documentSidebarBody">
               <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose PDF file">
                 <input type="file" id="file" accept=".pdf,application/pdf,application/x-pdf" />
                 <strong>PDF</strong>
@@ -1072,144 +1357,56 @@
                 aria-label="PDF URL"
               />
               <div class="err hidden" id="error"></div>
-              <div class="import-mode-buttons" style="margin-top: 0.45rem">
-                <button type="button" class="block" id="btnImportUrl" disabled>Import from URL</button>
-                <button type="button" class="block secondary" id="btnConvertMarkdown" disabled>
-                  Convert to Markdown
-                </button>
+              <button type="button" class="block hidden" id="btnExtractPdf" style="margin-top: 0.5rem">
+                Extract Markdown from PDF
+              </button>
+              <div id="workspaceMetaBlock" class="hidden">
+                <div class="doc-title" id="workspaceTitle">—</div>
+                <button type="button" class="secondary block" id="btnOtherPdf">Other PDF</button>
               </div>
-            </div>
-          </details>
-        </section>
-
-        <div id="markdownAgentSection" style="margin-bottom: 0.65rem">
-          <details class="sidebar-panel" id="customAiDetailsPanel" open>
-            <summary>
-              AI Agent
-              <span class="summary-chevron" aria-hidden="true"></span>
-            </summary>
-            <div class="sidebar-panel-body use-ai-unified">
-              <h3 class="use-ai-subtitle">Model</h3>
-              <div class="model-row">
-                <label for="llmProvider">Provider</label>
-                <select id="llmProvider" class="field" aria-label="LLM provider">
-                  <option value="mistral">Mistral (cloud)</option>
-                  <option value="ollama">Ollama (local)</option>
-                </select>
-              </div>
-              <div class="model-row hidden" id="mistralKeyRow" style="margin-top: 0.4rem">
-                <div class="label-with-info">
-                  <label for="mistralApiKey">Mistral API key</label>
-                  <span class="setup-info">
-                    <button type="button" class="setup-info__btn" aria-label="Mistral setup">i</button>
-                    <span class="setup-info__tip" role="tooltip">
-                      Create an API key at
-                      <a href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">console.mistral.ai</a>.
-                      Sent via this app’s server; key stays in your browser session (<code>sessionStorage</code>).
-                    </span>
-                  </span>
-                </div>
-                <input
-                  type="password"
-                  id="mistralApiKey"
-                  class="field"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="Paste API key"
-                  aria-label="Mistral API key"
-                />
-              </div>
-              <div class="model-row" style="margin-top: 0.4rem">
-                <div class="label-with-info">
-                  <label for="llmModel">Model</label>
-                  <span class="setup-info hidden" id="ollamaSetupInfo">
-                    <button type="button" class="setup-info__btn" aria-label="Ollama setup">i</button>
-                    <span class="setup-info__tip" role="tooltip">
-                      Install from
-                      <a href="https://ollama.com" target="_blank" rel="noopener noreferrer">ollama.com</a>.
-                      <code>ollama pull &lt;model&gt;</code> then pick it here. Server uses the host shown below.
-                    </span>
-                  </span>
-                </div>
-                <select id="llmModel" class="field" aria-label="LLM model">
-                  <option value="mistral-small-latest">Mistral Small (latest)</option>
-                  <option value="mistral-large-latest">Mistral Large (latest)</option>
-                </select>
-              </div>
-              <p class="notion-toggle-hint hidden" id="ollamaHostHint" style="margin: 0.35rem 0 0"></p>
-              <p class="notion-toggle-hint" id="llmOptionsHint" style="margin: 0.35rem 0 0"></p>
-              <div id="aiChatSection" class="hidden">
-                <div class="sidebar-chat">
-                  <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
-                  <div class="chat-input-row">
-                    <textarea
-                      id="chatInput"
-                      class="field"
-                      rows="2"
-                      placeholder="Message…"
-                      aria-label="Chat message"
-                    ></textarea>
-                    <button type="button" id="chatSend">Send</button>
+              <div id="postMdExportsBlock" class="hidden">
+                <div class="sidebar-actions">
+                  <div class="export-dropdown">
+                    <button
+                      type="button"
+                      class="secondary block export-dropdown-toggle"
+                      id="exportMenuToggle"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      aria-controls="exportMenuPanel"
+                    >
+                      <span>Download</span>
+                      <span class="export-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div id="exportMenuPanel" class="export-dropdown-panel hidden" role="menu" aria-label="Download options">
+                      <button type="button" role="menuitem" class="secondary export-menu-item block" id="dlZip">
+                        ZIP (Markdown + images)
+                      </button>
+                      <button type="button" role="menuitem" class="secondary export-menu-item block" id="dlMd">
+                        Markdown (.md)
+                      </button>
+                      <button type="button" role="menuitem" class="secondary export-menu-item block" id="dlDocx">
+                        Word (.docx)
+                      </button>
+                    </div>
                   </div>
+                  <button type="button" class="secondary block" id="copyMd">Copy Markdown</button>
+                  <button
+                    type="button"
+                    class="secondary block"
+                    id="toggleNotionExportBtn"
+                    aria-expanded="false"
+                    aria-controls="notionExportPanel"
+                  >
+                    Sync to Notion
+                  </button>
                 </div>
-              </div>
-            </div>
-          </details>
-        </div>
-
-        <section class="sidebar-section hidden" id="pdfExtractionOptionsSection" aria-label="PDF extraction options">
-          <details class="sidebar-panel">
-            <summary>
-              PDF extraction options
-              <span class="summary-chevron" aria-hidden="true"></span>
-            </summary>
-            <div class="sidebar-panel-body">
-              <div class="option-grid">
-                <label>
-                  <input type="checkbox" id="optMathEqImages" />
-                  <span>Math as images</span>
-                </label>
-                <label>
-                  <input type="checkbox" id="optStripPages" checked />
-                  <span>Strip page numbers</span>
-                </label>
-              </div>
-            </div>
-          </details>
-        </section>
-
-        <div id="sidebarDocTools" class="hidden">
-          <section class="sidebar-section" aria-label="Export">
-            <details class="sidebar-panel" id="fileExportPanel" open>
-              <summary>
-                File
-                <span class="summary-chevron" aria-hidden="true"></span>
-              </summary>
-              <div class="sidebar-panel-body">
-              <div class="doc-title" id="workspaceTitle">—</div>
-              <button type="button" class="secondary block" id="btnOtherPdf">Other PDF</button>
-              <button type="button" class="block hidden" id="btnExtractPdf">Extract Markdown from PDF</button>
-              <div class="sidebar-actions">
-                <button type="button" id="dlZip" class="block">Download ZIP</button>
-                <button type="button" class="secondary block" id="dlMd">Download Markdown</button>
-                <button type="button" class="secondary block" id="dlDocx">Download Word (.docx)</button>
-                <button type="button" class="secondary block" id="copyMd">Copy Markdown</button>
-                <button
-                  type="button"
-                  class="secondary block"
-                  id="toggleNotionExportBtn"
-                  aria-expanded="false"
-                  aria-controls="notionExportPanel"
+                <div
+                  id="notionExportPanel"
+                  class="notion-export-panel hidden"
+                  role="region"
+                  aria-label="Notion export"
                 >
-                  Add to Notion
-                </button>
-              </div>
-              <div
-                id="notionExportPanel"
-                class="notion-export-panel hidden"
-                role="region"
-                aria-label="Notion export"
-              >
                 <div class="notion-export-heading label-with-info" style="align-items: center">
                   <span>Notion</span>
                   <span class="setup-info">
@@ -1218,15 +1415,18 @@
                       In Notion, create an
                       <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer"
                         >internal integration</a
-                      >, copy its <strong>secret</strong>, open your database → <strong>⋯</strong> →
+                      >, copy its <strong>secret</strong>, open the <strong>target page</strong> → <strong>⋯</strong> →
                       <strong>Connect to</strong> / <strong>Add connections</strong> → pick that integration. Paste the
-                      secret here and the database link (or ID). Images are uploaded to Notion so they render in the page.
+                      secret and the <strong>page</strong> link (Copy link). Under <strong>Capabilities</strong>, enable
+                      <strong>Update content</strong> and <strong>Insert content</strong> (read-only lets you inspect but
+                      not sync). Sync replaces that page's blocks; images upload to Notion.
+                      Large PDFs: the JSON can exceed reverse-proxy limits (nginx client_max_body_size). Use Text only — skip images if export fails with 413 or a generic network error.
                     </span>
                   </span>
                 </div>
                 <label class="apply-doc-label notion-export-omit-img" style="margin: 0.35rem 0 0.15rem">
                   <input type="checkbox" id="notionOmitImages" />
-                  <span>Text only — skip images (small request; use if export returns 500)</span>
+                  <span>Text only — skip images</span>
                 </label>
                 <label class="notion-export-label" for="notionToken">Integration secret</label>
                 <input
@@ -1237,40 +1437,28 @@
                   spellcheck="false"
                   placeholder="Internal integration secret (secret_… or ntn_…)"
                 />
-                <label class="notion-export-label" for="notionDatabaseId">Database URL or ID</label>
+                <label class="notion-export-label" for="notionPageUrl">Page URL or ID</label>
                 <input
                   type="text"
-                  id="notionDatabaseId"
+                  id="notionPageUrl"
                   class="field block notion-export-field"
                   autocomplete="off"
                   spellcheck="false"
                   placeholder="https://www.notion.so/…"
                 />
                 <button type="button" class="secondary block" id="notionInspectBtn">
-                  Check connection &amp; load properties
+                  Check connection &amp; load page properties
                 </button>
                 <div id="notionInspectStatus" class="notion-export-status" aria-live="polite"></div>
                 <div id="notionPropsWrap" class="hidden">
                   <div class="notion-export-heading" style="font-size: 0.82rem; margin-top: 0.4rem">
-                    Database properties
+                    Page properties
                   </div>
                   <p class="notion-toggle-hint" style="margin: 0.2rem 0 0.35rem">
-                    Optional — values are set on the new Notion row. URL-like columns can be filled from the first link
-                    in the document after you connect.
+                    Optional — values are PATCHed on the page. URL-like fields can be filled from the first link in the
+                    document after you connect.
                   </p>
                   <div id="notionPropsFields"></div>
-                  <div id="notionPropsAiBlock" class="hidden">
-                    <label class="notion-export-label" for="notionPropsAiHint">AI hint (optional)</label>
-                    <input
-                      type="text"
-                      id="notionPropsAiHint"
-                      class="field block notion-export-field"
-                      placeholder="e.g. Topics, key takeaway, main audience"
-                    />
-                    <button type="button" class="secondary block" id="notionAiFillPropsBtn" style="margin-top: 0.35rem">
-                      Fill properties with AI
-                    </button>
-                  </div>
                 </div>
                 <label class="notion-export-label" for="notionPageTitle">Page title (optional)</label>
                 <input
@@ -1279,9 +1467,70 @@
                   class="field block notion-export-field"
                   placeholder="Defaults from first # heading"
                 />
-                <button type="button" class="secondary block" id="exportNotionBtn">Add page to Notion</button>
+                <button type="button" class="secondary block" id="exportNotionBtn">Update Notion page</button>
                 <div id="notionExportStatus" class="notion-export-status" aria-live="polite"></div>
+                </div>
               </div>
+            </div>
+            </details>
+          </section>
+
+          <section class="sidebar-section hidden" id="aiToolsSection" aria-label="AI assistant">
+            <details class="sidebar-panel" id="aiToolsPanel" open>
+              <summary>
+                AI
+                <span class="summary-chevron" aria-hidden="true"></span>
+              </summary>
+              <div class="sidebar-panel-body">
+                <div class="use-ai-unified">
+                  <div class="model-row">
+                    <select id="llmChoice" class="field" aria-label="Provider and model"></select>
+                  </div>
+                  <div id="mistralKeyRow" class="model-row" style="margin-bottom: 0.5rem; margin-top: 0.35rem">
+                    <div class="label-with-info">
+                      <label for="mistralApiKey">Mistral API key</label>
+                      <span class="setup-info">
+                        <button type="button" class="setup-info__btn" aria-label="Mistral setup">i</button>
+                        <span class="setup-info__tip" role="tooltip">
+                          Required for Mistral chat and optional PDF OCR. Create a key at
+                          <a href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer"
+                            >console.mistral.ai</a
+                          >. Stored in your browser session (<code>sessionStorage</code>).
+                        </span>
+                      </span>
+                    </div>
+                    <input
+                      type="password"
+                      id="mistralApiKey"
+                      class="field"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="Paste API key"
+                      aria-label="Mistral API key"
+                    />
+                  </div>
+                  <p class="notion-toggle-hint hidden" id="ollamaHostHint" style="margin: 0.35rem 0 0"></p>
+                  <p class="notion-toggle-hint" id="llmOptionsHint" style="margin: 0.35rem 0 0"></p>
+
+                  <div class="notes-section tools-ai-chat">
+                    <div class="notes-section-heading">Chat</div>
+                    <div id="aiChatSection">
+                      <div class="sidebar-chat">
+                        <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+                        <div class="chat-input-row">
+                          <textarea
+                            id="chatInput"
+                            class="field"
+                            rows="2"
+                            placeholder="Message about the selected section…"
+                            aria-label="Chat message"
+                          ></textarea>
+                          <button type="button" id="chatSend">Send</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </details>
           </section>
@@ -1322,44 +1571,86 @@
                 ><input type="checkbox" id="viewToggleSidebar" checked aria-controls="sidebar" /> Tools</label
               >
               <label class="view-toggle"
-                ><input type="checkbox" id="viewToggleMdPrev" checked aria-controls="viewPanePreview" /> Preview</label
-              >
-              <label class="view-toggle"
-                ><input type="checkbox" id="viewToggleOriginalConversion" aria-controls="viewPanePreview" /> Original
-                conversion</label
+                ><input type="checkbox" id="viewToggleMdPrev" checked aria-controls="viewPanePreview" /> Notes</label
               >
               <label class="view-toggle"
                 ><input type="checkbox" id="viewTogglePdf" aria-controls="viewPanePdf" /> PDF</label
               >
             </div>
           </div>
-          <div id="viewStack" class="view-stack" aria-label="Split document views"></div>
-          <div id="viewPanePool" class="view-pane-pool" aria-hidden="true">
-            <div id="viewPanePdf" class="view-pane" data-view-key="pdf">
-              <div class="view-pane-body">
-                <div class="main-pdf">
-                  <iframe id="pdfFrame" title="PDF preview"></iframe>
+          <div class="workspace-body">
+            <div class="workspace-docs">
+              <div id="viewStack" class="view-stack" aria-label="Split document views"></div>
+              <div id="viewPanePool" class="view-pane-pool" aria-hidden="true">
+                <div id="viewPanePdf" class="view-pane" data-view-key="pdf">
+                  <div class="view-pane-body">
+                    <div class="main-pdf">
+                      <iframe id="pdfFrame" title="PDF preview"></iframe>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div id="viewPanePreview" class="view-pane" data-view-key="preview">
-              <div class="view-pane-body">
-                <div class="notion-canvas" id="notionCanvas">
-                  <div class="notion-scroll">
-                    <div class="notion-page notion-placeholder" id="mdPlaceholder">Nothing to preview yet.</div>
-                    <div id="mdRendered" class="notion-page notion-doc preview hidden"></div>
+                <div id="viewPanePreview" class="view-pane" data-view-key="notes">
+                  <div class="view-pane-body">
+                    <div id="previewMdHost" class="preview-md-host">
+                      <div
+                        id="blockNotesToolbar"
+                        class="sd-block-notes-toolbar hidden"
+                        role="toolbar"
+                        aria-label="Block actions"
+                      >
+                        <button
+                          type="button"
+                          class="secondary"
+                          id="blockActionAddNote"
+                          title="Add bullet — ⌘B (Mac) / Ctrl+B (Windows)"
+                        >
+                          Add bullet
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary"
+                          id="blockActionClarify"
+                          title="Explain — ⌘E (Mac) / Ctrl+E (Windows)"
+                        >
+                          Explain
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary"
+                          id="blockActionMerge"
+                          title="Join with next block — or ⌘M (Mac) / Ctrl+M (Windows) while editing a block"
+                        >
+                          Merge
+                        </button>
+                        <button type="button" class="secondary block-action-delete" id="blockActionDelete">
+                          Delete
+                        </button>
+                      </div>
+                      <div class="notion-canvas" id="notionCanvas">
+                        <div class="notion-scroll">
+                          <div id="mdPlaceholder" class="notion-placeholder">No notes yet.</div>
+                          <div id="mdRendered" class="notion-page notion-doc notes hidden"></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div class="visually-hidden-md-store" aria-hidden="true">
-            <textarea id="mdEditor" spellcheck="false" tabindex="-1" disabled aria-hidden="true"></textarea>
+            <textarea
+              id="mdEditor"
+              class="md-editor"
+              spellcheck="false"
+              tabindex="-1"
+              disabled
+              aria-hidden="true"
+            ></textarea>
           </div>
         </div>
       </main>
     </div>
-
     <script src="/static/vendor/katex.min.js"></script>
     <script src="/static/vendor/texmath.browser.js"></script>
     <script src="/static/vendor/markdown-it.min.js"></script>
@@ -1367,2041 +1658,6 @@
     <script src="/static/vendor/jszip.min.js"></script>
     <script src="/static/vendor/turndown.js"></script>
     <script src="/static/vendor/turndown-plugin-gfm.js"></script>
-    <script>
-      (function () {
-        function apiUrl(path) {
-          return new URL(path, window.location.href).toString();
-        }
-
-        function isPdfFile(f) {
-          if (!f || !f.name) return false;
-          var lower = f.name.toLowerCase();
-          if (lower.endsWith(".pdf")) return true;
-          var t = (f.type || "").toLowerCase();
-          return t === "application/pdf" || t === "application/x-pdf";
-        }
-
-        function formatApiError(data, res) {
-          if (res.status === 413) {
-            return "Upload too large for this host.";
-          }
-          var d = data && data.detail;
-          if (Array.isArray(d)) {
-            return d
-              .map(function (x) {
-                return typeof x === "string" ? x : x && x.msg ? x.msg : JSON.stringify(x);
-              })
-              .join("; ");
-          }
-          if (d != null && typeof d === "object") {
-            return JSON.stringify(d);
-          }
-          if (typeof d === "string") return d;
-          return res.statusText || "Request failed";
-        }
-
-        /** FastAPI errors are JSON; proxies / crashes often return HTML or plain text. */
-        function parseApiJsonBody(res, text) {
-          var raw = text == null ? "" : String(text);
-          var trimmed = raw.trim();
-          if (!trimmed) {
-            if (!res.ok) {
-              throw new Error((res.statusText || "Error") + " (" + res.status + ")");
-            }
-            return {};
-          }
-          try {
-            return JSON.parse(trimmed);
-          } catch (e) {
-            if (!res.ok) {
-              var snip = trimmed.replace(/\s+/g, " ").slice(0, 420);
-              throw new Error("Server returned non-JSON (" + res.status + "): " + snip);
-            }
-            throw new Error("Server response was not valid JSON.");
-          }
-        }
-
-        if (
-          typeof window.markdownit !== "function" ||
-          typeof window.markdownitTexmath !== "function" ||
-          !window.katex ||
-          !window.DOMPurify ||
-          !window.JSZip ||
-          typeof TurndownService === "undefined" ||
-          typeof turndownPluginGfm === "undefined"
-        ) {
-          var err0 = document.getElementById("error");
-          err0.textContent = "Preview libraries failed to load. Check /static/vendor assets.";
-          err0.classList.remove("hidden");
-          return;
-        }
-
-        var md = window.markdownit({ html: true, linkify: true, typographer: false });
-        if (typeof md.enable === "function") {
-          md.enable(["table"]);
-        }
-        md.use(window.markdownitTexmath, {
-          engine: window.katex,
-          delimiters: ["dollars", "brackets"],
-          katexOptions: { throwOnError: false, output: "html" },
-        });
-        var DOMPurify = window.DOMPurify;
-        var JSZip = window.JSZip;
-
-        var turndownService = new TurndownService({
-          headingStyle: "atx",
-          codeBlockStyle: "fenced",
-          bulletListMarker: "-",
-          emDelimiter: "*",
-        });
-        turndownService.use(turndownPluginGfm.gfm);
-        /* Default Turndown escapes *, #, -, etc. in text nodes so “markdown-looking” typing in the
-           preview becomes \\* and \\# in the source. Keep backslashes and backticks only so raw
-           # headings, *emphasis*, lists, and pipe tables round-trip when edited on the canvas. */
-        turndownService.escape = function (string) {
-          return String(string).replace(/\\/g, "\\\\").replace(/`/g, "\\`");
-        };
-        turndownService.addRule("preserveKatex", {
-          filter: function (node) {
-            if (node.nodeName !== "SPAN" || !node.className) return false;
-            var cn = typeof node.className === "string" ? node.className : "";
-            if (!/\bkatex\b/.test(cn)) return false;
-            var p = node.parentElement;
-            if (p && p.className && /\bkatex\b/.test(String(p.className))) return false;
-            return true;
-          },
-          replacement: function (content, node) {
-            return "\n\n" + node.outerHTML + "\n\n";
-          },
-        });
-
-        var drop = document.getElementById("drop");
-        var fileInput = document.getElementById("file");
-        var pdfUrlInput = document.getElementById("pdfUrl");
-        var errorEl = document.getElementById("error");
-        var sidebarDocTools = document.getElementById("sidebarDocTools");
-        var mainEmpty = document.getElementById("mainEmpty");
-        var mainWorkspace = document.getElementById("mainWorkspace");
-        var workspaceError = document.getElementById("workspaceError");
-        var pdfFrame = document.getElementById("pdfFrame");
-        var mdEditor = document.getElementById("mdEditor");
-        var mdPlaceholder = document.getElementById("mdPlaceholder");
-        var mdRendered = document.getElementById("mdRendered");
-        var chatMessages = document.getElementById("chatMessages");
-        var chatInput = document.getElementById("chatInput");
-        var chatSend = document.getElementById("chatSend");
-        var workspaceTitle = document.getElementById("workspaceTitle");
-        var btnOtherPdf = document.getElementById("btnOtherPdf");
-        var dlZip = document.getElementById("dlZip");
-        var dlMd = document.getElementById("dlMd");
-        var dlDocx = document.getElementById("dlDocx");
-        var copyMd = document.getElementById("copyMd");
-        var viewTogglePdf = document.getElementById("viewTogglePdf");
-        var viewToggleOriginalConversion = document.getElementById("viewToggleOriginalConversion");
-        var viewToggleMdPrev = document.getElementById("viewToggleMdPrev");
-        var viewToggleSidebar = document.getElementById("viewToggleSidebar");
-        var appShell = document.getElementById("appShell");
-        var sidebarEl = document.getElementById("sidebar");
-        var sidebarResizer = document.getElementById("sidebarResizer");
-        var agentProgressBar = document.getElementById("agentProgressBar");
-        var agentProgressText = document.getElementById("agentProgressText");
-        var notionCanvas = document.getElementById("notionCanvas");
-        var viewStack = document.getElementById("viewStack");
-        var viewPanePool = document.getElementById("viewPanePool");
-        var viewPanePdf = document.getElementById("viewPanePdf");
-        var viewPanePreview = document.getElementById("viewPanePreview");
-        var llmProvider = document.getElementById("llmProvider");
-        var llmModel = document.getElementById("llmModel");
-        var llmOptionsHint = document.getElementById("llmOptionsHint");
-        var llmOptions = null;
-        var viewPanesByKey = {
-          pdf: viewPanePdf,
-          preview: viewPanePreview,
-        };
-        var prevViewOrderKey = "";
-
-        var selectedFile = null;
-        var pdfObjectUrl = null;
-        var documentId = null;
-        var pendingImportMode = "blank";
-        var lastImportMode = "blank";
-        var showExtractOptionsUi = false;
-        var importInFlight = false;
-        var extractDeferred = false;
-        var lastImportMarkdownReady = false;
-        var rawMarkdown = "";
-        /** "working" = editable doc; "original" = read-only PDF extraction (rawMarkdown). */
-        var previewSourceMode = "working";
-        var lastImages = {};
-        var previewRaf = null;
-        var previewSyncTimer = null;
-        var lastBase = "converted";
-        var chatHistory = [];
-
-        var MISTRAL_KEY_SS = "smartdown_mistral_api_key";
-
-        function isCustomAiMode() {
-          return true;
-        }
-
-        function hasImportSource() {
-          if (selectedFile) return true;
-          var u = (pdfUrlInput && pdfUrlInput.value ? pdfUrlInput.value : "").trim();
-          return u.indexOf("http://") === 0 || u.indexOf("https://") === 0;
-        }
-
-        function importExtractsMarkdownForMode(mode) {
-          return mode === "extract";
-        }
-
-        function updateImportSourceStatus() {
-          var el = document.getElementById("importSourceStatus");
-          if (!el) return;
-          if (selectedFile) {
-            el.textContent = "PDF uploaded: " + (selectedFile.name || "file");
-          } else {
-            var u = (pdfUrlInput && pdfUrlInput.value ? pdfUrlInput.value : "").trim();
-            if (u.indexOf("http://") === 0 || u.indexOf("https://") === 0) {
-              el.textContent = "URL provided";
-            } else {
-              el.textContent = "No PDF or URL yet";
-            }
-          }
-        }
-
-        function hasValidPdfUrl() {
-          var u = (pdfUrlInput && pdfUrlInput.value ? pdfUrlInput.value : "").trim();
-          return u.indexOf("http://") === 0 || u.indexOf("https://") === 0;
-        }
-
-        function syncImportActionButtons() {
-          var imp = document.getElementById("btnImportUrl");
-          if (imp) imp.disabled = importInFlight || !!selectedFile || !hasValidPdfUrl();
-          var conv = document.getElementById("btnConvertMarkdown");
-          var mdReady = !!(documentId && !extractDeferred);
-          if (conv) {
-            conv.classList.toggle("hidden", mdReady);
-            if (!mdReady) {
-              conv.disabled = importInFlight || !hasImportSource();
-            }
-          }
-          var det = document.getElementById("importPanelDetails");
-          if (det) {
-            if (mdReady && !lastImportMarkdownReady) {
-              det.open = false;
-            } else if (!mdReady) {
-              det.open = true;
-            }
-          }
-          lastImportMarkdownReady = mdReady;
-          updateImportSourceStatus();
-        }
-
-        function syncMistralKeyRow() {
-          var row = document.getElementById("mistralKeyRow");
-          if (!row) return;
-          var show = llmProvider && llmProvider.value === "mistral";
-          row.classList.toggle("hidden", !show);
-        }
-
-        function syncOllamaHelp() {
-          var btnWrap = document.getElementById("ollamaSetupInfo");
-          if (!btnWrap) return;
-          btnWrap.classList.toggle("hidden", !(llmProvider && llmProvider.value === "ollama"));
-          var ohh = document.getElementById("ollamaHostHint");
-          if (ohh) {
-            ohh.classList.toggle("hidden", !(llmProvider && llmProvider.value === "ollama"));
-          }
-        }
-
-        function syncChatSection() {
-          var chat = document.getElementById("aiChatSection");
-          if (!chat) return;
-          chat.classList.toggle("hidden", !documentId);
-        }
-
-        function syncImportModeUi() {
-          var np = document.getElementById("notionPropsAiBlock");
-          if (np) np.classList.toggle("hidden", !documentId);
-          var pdfEx = document.getElementById("pdfExtractionOptionsSection");
-          if (pdfEx) {
-            var showEx = showExtractOptionsUi || lastImportMode === "extract" || extractDeferred;
-            pdfEx.classList.toggle("hidden", !showEx);
-          }
-          syncChatSection();
-          syncMistralKeyRow();
-          syncOllamaHelp();
-        }
-
-        function mistralApiKeyPayload() {
-          if (!llmProvider || llmProvider.value !== "mistral") return null;
-          var el = document.getElementById("mistralApiKey");
-          var v = el && el.value ? el.value.trim() : "";
-          return v || null;
-        }
-
-        function assertMistralKeyIfNeeded() {
-          if (!llmProvider || llmProvider.value !== "mistral") return;
-          if (!mistralApiKeyPayload()) {
-            throw new Error(
-              "Enter your Mistral API key (Markdown Agent → Model) or switch provider to Ollama."
-            );
-          }
-        }
-
-        function bindMistralKeySessionStorage() {
-          var el = document.getElementById("mistralApiKey");
-          if (!el) return;
-          try {
-            var v = sessionStorage.getItem(MISTRAL_KEY_SS);
-            if (v) el.value = v;
-          } catch (e0) {}
-          el.addEventListener("input", function () {
-            try {
-              sessionStorage.setItem(MISTRAL_KEY_SS, el.value || "");
-            } catch (e1) {}
-          });
-        }
-
-        function mistralModelList() {
-          return (llmOptions && llmOptions.mistral_models) || [];
-        }
-        function ollamaModelList() {
-          return (llmOptions && llmOptions.ollama_models) || [];
-        }
-
-        function syncLlmModelOptions() {
-          if (!llmProvider || !llmModel) return;
-          var pid = llmProvider.value;
-          var list = pid === "ollama" ? ollamaModelList() : mistralModelList();
-          var prev = llmModel.value;
-          llmModel.innerHTML = "";
-          list.forEach(function (m) {
-            var opt = document.createElement("option");
-            opt.value = m.id;
-            opt.textContent = m.label || m.id;
-            llmModel.appendChild(opt);
-          });
-          if (prev && list.some(function (x) { return x.id === prev; })) {
-            llmModel.value = prev;
-          } else if (llmOptions && llmOptions.defaults && llmOptions.defaults.model) {
-            var d = llmOptions.defaults.model;
-            if (list.some(function (x) { return x.id === d; })) llmModel.value = d;
-            else if (list.length) llmModel.selectedIndex = 0;
-          } else if (list.length) {
-            llmModel.selectedIndex = 0;
-          }
-          if (llmOptionsHint) {
-            if (pid === "ollama" && !list.length) {
-              llmOptionsHint.textContent =
-                "No Ollama models at " +
-                ((llmOptions && llmOptions.ollama_host) || "Ollama") +
-                ". Run `ollama serve`, pull a model, then refresh this page.";
-            } else {
-              llmOptionsHint.textContent = "";
-            }
-          }
-          llmModel.disabled = pid === "ollama" && !list.length;
-          syncMistralKeyRow();
-          syncOllamaHelp();
-        }
-
-        function applyLlmOptionsPayload(data) {
-          llmOptions = data || {};
-          if (!llmProvider) return;
-          llmProvider.innerHTML = "";
-          [
-            { id: "mistral", label: "Mistral (cloud)" },
-            { id: "ollama", label: "Ollama (local)" },
-          ].forEach(function (p) {
-            var opt = document.createElement("option");
-            opt.value = p.id;
-            opt.textContent = p.label;
-            llmProvider.appendChild(opt);
-          });
-          var dp = (llmOptions.defaults && llmOptions.defaults.provider) || "mistral";
-          if (dp === "mistral" || dp === "ollama") llmProvider.value = dp;
-          syncLlmModelOptions();
-          var ohh = document.getElementById("ollamaHostHint");
-          if (ohh) {
-            ohh.textContent = llmOptions.ollama_host
-              ? "This app’s server talks to Ollama at: " + llmOptions.ollama_host + " (same machine as the server unless configured otherwise)."
-              : "";
-          }
-        }
-
-        function loadLlmOptions() {
-          return fetch(apiUrl("/api/llm-options"))
-            .then(function (res) {
-              return res.json().then(function (data) {
-                return { ok: res.ok, data: data };
-              });
-            })
-            .then(function (x) {
-              if (x.ok) applyLlmOptionsPayload(x.data);
-              else if (llmOptionsHint) llmOptionsHint.textContent = "Could not load model list.";
-            })
-            .catch(function () {
-              if (llmOptionsHint) llmOptionsHint.textContent = "Could not load model list.";
-            });
-        }
-
-        if (llmProvider) {
-          llmProvider.addEventListener("change", syncLlmModelOptions);
-        }
-        loadLlmOptions();
-        bindMistralKeySessionStorage();
-
-        function syncExtractPdfButton() {
-          var btn = document.getElementById("btnExtractPdf");
-          if (!btn) return;
-          btn.classList.toggle("hidden", !documentId || !extractDeferred);
-        }
-
-        syncImportModeUi();
-        syncImportActionButtons();
-
-        function resetFirstPassOptions() {
-          pendingImportMode = "blank";
-          lastImportMode = "blank";
-          showExtractOptionsUi = false;
-          syncImportModeUi();
-          syncImportActionButtons();
-        }
-
-        function showUploadError(msg) {
-          errorEl.textContent = msg;
-          errorEl.classList.toggle("hidden", !msg);
-        }
-
-        function showWorkspaceError(msg) {
-          workspaceError.textContent = msg;
-          workspaceError.classList.toggle("hidden", !msg);
-        }
-
-        function getVisibleViewOrder() {
-          var o = [];
-          if (viewTogglePdf && viewTogglePdf.checked) o.push("pdf");
-          if (viewToggleMdPrev && viewToggleMdPrev.checked) o.push("preview");
-          return o;
-        }
-
-        function layoutViewStack() {
-          if (!viewStack || !viewPanePool) return;
-          var order = getVisibleViewOrder();
-          if (!order.length) {
-            if (viewToggleMdPrev) viewToggleMdPrev.checked = true;
-            order = ["preview"];
-          }
-          var orderKey = order.join(",");
-          var resetPaneSizes = orderKey !== prevViewOrderKey;
-          prevViewOrderKey = orderKey;
-
-          ["pdf", "preview"].forEach(function (k) {
-            var el = viewPanesByKey[k];
-            if (!el) return;
-            if (el.parentNode) el.parentNode.removeChild(el);
-            viewPanePool.appendChild(el);
-            if (resetPaneSizes) {
-              el.style.flex = "";
-              el.style.height = "";
-            }
-          });
-          while (viewStack.firstChild) {
-            viewStack.removeChild(viewStack.firstChild);
-          }
-          order.forEach(function (key, idx) {
-            var pane = viewPanesByKey[key];
-            if (!pane) return;
-            viewStack.appendChild(pane);
-            if (idx < order.length - 1) {
-              var r = document.createElement("div");
-              r.className = "view-resizer";
-              r.setAttribute("role", "separator");
-              r.setAttribute("aria-orientation", "horizontal");
-              r.setAttribute("aria-label", "Drag to resize panels");
-              r.tabIndex = 0;
-              viewStack.appendChild(r);
-            }
-          });
-        }
-
-        if (viewStack) {
-          viewStack.addEventListener("pointerdown", function (e) {
-            var t = e.target;
-            if (!t || !t.classList || !t.classList.contains("view-resizer")) return;
-            if (e.pointerType === "mouse" && e.button !== 0) return;
-            e.preventDefault();
-            var topPane = t.previousElementSibling;
-            var bottomPane = t.nextElementSibling;
-            if (
-              !topPane ||
-              !bottomPane ||
-              !topPane.classList.contains("view-pane") ||
-              !bottomPane.classList.contains("view-pane")
-            ) {
-              return;
-            }
-            var startY = e.clientY;
-            var h1 = topPane.getBoundingClientRect().height;
-            var h2 = bottomPane.getBoundingClientRect().height;
-            var minH = 100;
-            function onMove(ev) {
-              var dy = ev.clientY - startY;
-              var nh1 = h1 + dy;
-              var nh2 = h2 - dy;
-              if (nh1 < minH) {
-                dy = minH - h1;
-                nh1 = minH;
-                nh2 = h2 - dy;
-              } else if (nh2 < minH) {
-                dy = h2 - minH;
-                nh2 = minH;
-                nh1 = h1 + dy;
-              }
-              topPane.style.flex = "none";
-              bottomPane.style.flex = "none";
-              topPane.style.height = nh1 + "px";
-              bottomPane.style.height = nh2 + "px";
-            }
-            function onUp() {
-              t.releasePointerCapture(e.pointerId);
-              document.removeEventListener("pointermove", onMove);
-              document.removeEventListener("pointerup", onUp);
-              document.removeEventListener("pointercancel", onUp);
-            }
-            t.setPointerCapture(e.pointerId);
-            document.addEventListener("pointermove", onMove);
-            document.addEventListener("pointerup", onUp);
-            document.addEventListener("pointercancel", onUp);
-          });
-        }
-
-        if (viewTogglePdf) viewTogglePdf.addEventListener("change", layoutViewStack);
-        if (viewToggleMdPrev) viewToggleMdPrev.addEventListener("change", layoutViewStack);
-        if (viewToggleOriginalConversion) {
-          viewToggleOriginalConversion.addEventListener("change", function () {
-            setPreviewSourceMode(viewToggleOriginalConversion.checked ? "original" : "working");
-          });
-        }
-
-        function syncSidebarVisibilityFromToggle() {
-          if (!appShell || !viewToggleSidebar) return;
-          appShell.classList.toggle("sidebar-hidden", !viewToggleSidebar.checked);
-        }
-        if (viewToggleSidebar) viewToggleSidebar.addEventListener("change", syncSidebarVisibilityFromToggle);
-
-        var SIDEBAR_MIN_W = 260;
-        var SIDEBAR_MAX_CAP = 560;
-        function sidebarMaxWidthPx() {
-          return Math.min(SIDEBAR_MAX_CAP, Math.floor(window.innerWidth * 0.58));
-        }
-        function clampSidebarWidth(w) {
-          return Math.max(SIDEBAR_MIN_W, Math.min(sidebarMaxWidthPx(), w));
-        }
-        if (sidebarResizer && sidebarEl) {
-          sidebarResizer.addEventListener("pointerdown", function (e) {
-            if (window.innerWidth <= 820) return;
-            if (e.pointerType === "mouse" && e.button !== 0) return;
-            e.preventDefault();
-            var startX = e.clientX;
-            var startW = sidebarEl.getBoundingClientRect().width;
-            function onMove(ev) {
-              var nw = clampSidebarWidth(startW + (ev.clientX - startX));
-              sidebarEl.style.width = nw + "px";
-            }
-            function onUp() {
-              sidebarResizer.releasePointerCapture(e.pointerId);
-              document.removeEventListener("pointermove", onMove);
-              document.removeEventListener("pointerup", onUp);
-              document.removeEventListener("pointercancel", onUp);
-            }
-            sidebarResizer.setPointerCapture(e.pointerId);
-            document.addEventListener("pointermove", onMove);
-            document.addEventListener("pointerup", onUp);
-            document.addEventListener("pointercancel", onUp);
-          });
-          sidebarResizer.addEventListener("keydown", function (e) {
-            if (window.innerWidth <= 820) return;
-            if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-            e.preventDefault();
-            var step = e.shiftKey ? 32 : 12;
-            var w = sidebarEl.getBoundingClientRect().width;
-            var nw = e.key === "ArrowRight" ? w + step : w - step;
-            sidebarEl.style.width = clampSidebarWidth(nw) + "px";
-          });
-        }
-
-        function setAgentProgress(active, message) {
-          if (agentProgressBar) {
-            agentProgressBar.classList.toggle("hidden", !active);
-            agentProgressBar.setAttribute("aria-busy", active ? "true" : "false");
-          }
-          if (agentProgressText && message) agentProgressText.textContent = message;
-          if (notionCanvas) notionCanvas.classList.toggle("agent-working", !!active);
-          if (mainWorkspace) mainWorkspace.setAttribute("aria-busy", active ? "true" : "false");
-        }
-
-        function openDocumentUI() {
-          sidebarDocTools.classList.remove("hidden");
-          mainEmpty.classList.add("hidden");
-          mainEmpty.setAttribute("aria-hidden", "true");
-          mainWorkspace.classList.remove("hidden");
-          layoutViewStack();
-          syncChatSection();
-        }
-
-        function closeDocumentUI() {
-          sidebarDocTools.classList.add("hidden");
-          mainEmpty.classList.remove("hidden");
-          mainEmpty.setAttribute("aria-hidden", "false");
-          mainWorkspace.classList.add("hidden");
-          var chat = document.getElementById("aiChatSection");
-          if (chat) chat.classList.add("hidden");
-        }
-
-        function normalizeImageKey(rawPath) {
-          var path = rawPath.split("?")[0].trim().replace(/\\/g, "/");
-          if (path.indexOf("images/") === 0) return path;
-          var i = path.indexOf("images/");
-          if (i >= 0) return path.slice(i);
-          return path;
-        }
-
-        function inlineImages(markdown, images) {
-          return markdown.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function (full, alt, rawPath) {
-            var key = normalizeImageKey(rawPath);
-            var b64 = images[key];
-            if (!b64) return full;
-            return "![" + alt + "](data:image/png;base64," + b64 + ")";
-          });
-        }
-
-        function normalizeB64Chunk(s) {
-          return (s || "").replace(/\s+/g, "");
-        }
-
-        /** Turn data-URL images in markdown back into images/ paths (keeps API payloads small). */
-        function restoreDataUriImagesToPaths(text) {
-          if (!text || !lastImages) return text || "";
-          return text.replace(
-            /!\[([^\]]*)\]\(data:image\/[a-z0-9.+-]+;base64,([^)]+)\)/gi,
-            function (_full, alt, b64) {
-              var nb = normalizeB64Chunk(b64);
-              for (var key in lastImages) {
-                if (Object.prototype.hasOwnProperty.call(lastImages, key) && normalizeB64Chunk(lastImages[key]) === nb) {
-                  return "![" + alt + "](" + key + ")";
-                }
-              }
-              return "![" + alt + "](images/_unknown_inline.png)";
-            }
-          );
-        }
-
-        function markdownForApi() {
-          return restoreDataUriImagesToPaths(mdEditor.value || "");
-        }
-
-        function getMarkdownForPreview() {
-          if (previewSourceMode === "original") return rawMarkdown || "";
-          return mdEditor.value || "";
-        }
-
-        function setPreviewSourceMode(mode) {
-          if (mode !== "working" && mode !== "original") return;
-          previewSourceMode = mode;
-          if (viewToggleOriginalConversion && viewToggleOriginalConversion.checked !== (mode === "original")) {
-            viewToggleOriginalConversion.checked = mode === "original";
-          }
-          updatePreviewFromEditor();
-        }
-
-        function getPreviewBlockAtCaret() {
-          var sel = window.getSelection();
-          if (!sel.rangeCount) return null;
-          var n = sel.anchorNode;
-          if (!n) return null;
-          if (n.nodeType === 3) n = n.parentElement;
-          var root = mdRendered;
-          while (n && n !== root) {
-            if (!n || n === document.body) return null;
-            var tag = n.tagName;
-            if (/^(P|H[1-6]|LI|BLOCKQUOTE|PRE|TD|TH)$/i.test(tag)) return n;
-            n = n.parentElement;
-          }
-          return null;
-        }
-
-        function textFromBlockStartToCaret(block) {
-          var sel = window.getSelection();
-          if (!sel.rangeCount || !block) return "";
-          try {
-            var r = document.createRange();
-            r.selectNodeContents(block);
-            r.setEnd(sel.anchorNode, sel.anchorOffset);
-            return r.toString().replace(/\u00a0/g, " ");
-          } catch (e) {
-            return "";
-          }
-        }
-
-        function placeCaretInElement(el) {
-          if (!el) return;
-          try {
-            el.focus();
-          } catch (e2) {}
-          var s = window.getSelection();
-          var r = document.createRange();
-          function firstText(node) {
-            if (!node) return null;
-            if (node.nodeType === 3) return node;
-            for (var i = 0; i < node.childNodes.length; i++) {
-              var x = firstText(node.childNodes[i]);
-              if (x) return x;
-            }
-            return null;
-          }
-          var t = firstText(el);
-          if (t) {
-            var len = t.length;
-            r.setStart(t, len ? len : 0);
-            r.collapse(true);
-          } else {
-            var z = document.createTextNode("\u200b");
-            el.appendChild(z);
-            r.setStart(z, 0);
-            r.collapse(true);
-          }
-          s.removeAllRanges();
-          s.addRange(r);
-        }
-
-        function getCaretOffsetInRoot(root) {
-          var sel = window.getSelection();
-          if (!sel.rangeCount) return 0;
-          try {
-            var range = sel.getRangeAt(0);
-            var pre = document.createRange();
-            pre.selectNodeContents(root);
-            pre.setEnd(range.startContainer, range.startOffset);
-            return pre.toString().length;
-          } catch (ex) {
-            return 0;
-          }
-        }
-
-        function setCaretOffsetInRoot(root, offset) {
-          offset = Math.max(0, offset | 0);
-          if (!root) return false;
-          var walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-          var n = walk.nextNode();
-          var pos = 0;
-          while (n) {
-            var len = n.length;
-            if (pos + len >= offset) {
-              var r = document.createRange();
-              r.setStart(n, Math.min(len, offset - pos));
-              r.collapse(true);
-              var s = window.getSelection();
-              s.removeAllRanges();
-              s.addRange(r);
-              return true;
-            }
-            pos += len;
-            n = walk.nextNode();
-          }
-          placeCaretInElement(root);
-          return false;
-        }
-
-        function insertHrAndNewParagraph(block) {
-          var hr = document.createElement("hr");
-          var parent = block.parentNode;
-          if (!parent) return false;
-          parent.insertBefore(hr, block);
-          parent.removeChild(block);
-          var np = document.createElement("p");
-          np.appendChild(document.createTextNode("\u200b"));
-          if (hr.nextSibling) parent.insertBefore(np, hr.nextSibling);
-          else parent.appendChild(np);
-          placeCaretInElement(np);
-          return true;
-        }
-
-        function tryApplyClosingBoldShortcut(e) {
-          if (!e || e.data !== "*") return false;
-          var sel = window.getSelection();
-          if (!sel.rangeCount || !sel.isCollapsed) return false;
-          var node = sel.anchorNode;
-          if (!node || node.nodeType !== 3 || !mdRendered.contains(node)) return false;
-          var off = sel.anchorOffset;
-          var text = node.textContent || "";
-          var before = text.slice(0, off);
-          var m = before.match(/\*\*([^*]+)\*$/);
-          if (!m || !m[1]) return false;
-          e.preventDefault();
-          var inner = m[1];
-          var delStart = before.length - m[0].length;
-          try {
-            var r = document.createRange();
-            r.setStart(node, delStart);
-            r.setEnd(node, off);
-            r.deleteContents();
-            var strong = document.createElement("strong");
-            strong.appendChild(document.createTextNode(inner));
-            r.insertNode(strong);
-            var tail = document.createTextNode("\u200b");
-            if (strong.nextSibling) strong.parentNode.insertBefore(tail, strong.nextSibling);
-            else strong.parentNode.appendChild(tail);
-            var s2 = window.getSelection();
-            var r2 = document.createRange();
-            r2.setStart(tail, 0);
-            r2.collapse(true);
-            s2.removeAllRanges();
-            s2.addRange(r2);
-          } catch (err) {
-            return false;
-          }
-          mdRendered.dispatchEvent(new Event("input", { bubbles: true }));
-          return true;
-        }
-
-        function tryApplyHrOnEnter(e) {
-          if (!e || e.key !== "Enter" || e.shiftKey) return false;
-          var block = getPreviewBlockAtCaret();
-          if (!block || !mdRendered.contains(block)) return false;
-          var t = (block.textContent || "").replace(/\u200b/g, "").replace(/\s+/g, "");
-          if (!/^(-{3,}|\*{3,}|_{3,})$/.test(t)) return false;
-          e.preventDefault();
-          insertHrAndNewParagraph(block);
-          mdRendered.dispatchEvent(new Event("input", { bubbles: true }));
-          return true;
-        }
-
-        function tryApplyBlockMarkdownShortcut() {
-          if (previewSourceMode !== "working") return false;
-          var block = getPreviewBlockAtCaret();
-          if (!block || !mdRendered.contains(block)) return false;
-          var raw = textFromBlockStartToCaret(block);
-          var t = raw.replace(/\u200b/g, "").replace(/\n/g, "");
-
-          var hm = t.match(/^(#{1,6})$/);
-          if (hm) {
-            var level = hm[1].length;
-            var h = document.createElement("h" + level);
-            h.appendChild(document.createTextNode("\u200b"));
-            block.parentNode.replaceChild(h, block);
-            placeCaretInElement(h);
-            return true;
-          }
-          if (/^[-*]$/.test(t)) {
-            var ul = document.createElement("ul");
-            var li = document.createElement("li");
-            li.appendChild(document.createTextNode("\u200b"));
-            ul.appendChild(li);
-            block.parentNode.replaceChild(ul, block);
-            placeCaretInElement(li);
-            return true;
-          }
-          var om = t.match(/^(\d+)\.$/);
-          if (om) {
-            var ol = document.createElement("ol");
-            var li2 = document.createElement("li");
-            li2.appendChild(document.createTextNode("\u200b"));
-            ol.appendChild(li2);
-            block.parentNode.replaceChild(ol, block);
-            placeCaretInElement(li2);
-            return true;
-          }
-          if (/^>$/.test(t)) {
-            var bq = document.createElement("blockquote");
-            var p = document.createElement("p");
-            p.appendChild(document.createTextNode("\u200b"));
-            bq.appendChild(p);
-            block.parentNode.replaceChild(bq, block);
-            placeCaretInElement(p);
-            return true;
-          }
-          if (/^[-*+]\s\[\s\]$/.test(t) || /^[-*+]\s\[[xX]\]$/.test(t)) {
-            var ulc = document.createElement("ul");
-            var lic = document.createElement("li");
-            lic.appendChild(document.createTextNode("\u200b"));
-            ulc.appendChild(lic);
-            block.parentNode.replaceChild(ulc, block);
-            placeCaretInElement(lic);
-            return true;
-          }
-          if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) {
-            insertHrAndNewParagraph(block);
-            return true;
-          }
-          return false;
-        }
-
-        var PURIFY_PREVIEW = {
-          USE_PROFILES: { html: true },
-          ADD_TAGS: [
-            "eq",
-            "eqn",
-            "section",
-            "svg",
-            "path",
-            "g",
-            "line",
-            "rect",
-            "circle",
-            "ellipse",
-            "polygon",
-            "polyline",
-            "defs",
-            "clipPath",
-            "use",
-            "math",
-            "semantics",
-            "mrow",
-            "mi",
-            "mo",
-            "mn",
-            "mspace",
-            "mtext",
-            "annotation",
-          ],
-          ADD_ATTR: [
-            "class",
-            "style",
-            "aria-hidden",
-            "role",
-            "xmlns",
-            "width",
-            "height",
-            "viewBox",
-            "fill",
-            "stroke",
-            "d",
-            "x",
-            "y",
-            "x1",
-            "y1",
-            "x2",
-            "y2",
-            "stroke-width",
-            "stroke-linecap",
-            "stroke-linejoin",
-            "transform",
-            "encoding",
-          ],
-        };
-
-        function setNotionPreviewEditable(on) {
-          var pv = (getMarkdownForPreview() || "").trim();
-          if (on && documentId && pv && previewSourceMode === "working") {
-            mdRendered.setAttribute("contenteditable", "true");
-            mdRendered.setAttribute("spellcheck", "true");
-            mdRendered.setAttribute("role", "textbox");
-            mdRendered.setAttribute("aria-multiline", "true");
-            mdRendered.setAttribute("aria-label", "Edit document preview");
-            mdRendered.classList.add("notion-editable");
-          } else {
-            mdRendered.setAttribute("contenteditable", "false");
-            mdRendered.removeAttribute("aria-multiline");
-            mdRendered.removeAttribute("aria-label");
-            mdRendered.classList.remove("notion-editable");
-            if (!on) {
-              mdRendered.removeAttribute("role");
-            }
-          }
-        }
-
-        function updatePreviewFromEditor() {
-          var src = getMarkdownForPreview() || "";
-          if (!src.trim()) {
-            setNotionPreviewEditable(false);
-            mdRendered.innerHTML = "";
-            mdRendered.classList.add("hidden");
-            mdPlaceholder.textContent =
-              previewSourceMode === "original"
-                ? "Original conversion is empty (extract Markdown first)."
-                : "Nothing to preview yet.";
-            mdPlaceholder.classList.remove("hidden");
-            return;
-          }
-          mdPlaceholder.classList.add("hidden");
-          mdRendered.classList.remove("hidden");
-          var forPreview = inlineImages(src, lastImages);
-          var dirty = md.render(forPreview);
-          mdRendered.innerHTML = DOMPurify.sanitize(dirty, PURIFY_PREVIEW);
-          if (previewSourceMode === "original") {
-            setNotionPreviewEditable(false);
-          } else {
-            setNotionPreviewEditable(true);
-          }
-        }
-
-        function scheduleLivePreview() {
-          if (previewRaf) cancelAnimationFrame(previewRaf);
-          previewRaf = requestAnimationFrame(function () {
-            previewRaf = null;
-            updatePreviewFromEditor();
-          });
-        }
-
-        function setEditorMarkdown(text) {
-          mdEditor.value = text || "";
-          updatePreviewFromEditor();
-        }
-
-        function clearMdPreview() {
-          setNotionPreviewEditable(false);
-          previewSourceMode = "working";
-          if (viewToggleOriginalConversion) viewToggleOriginalConversion.checked = false;
-          mdEditor.value = "";
-          mdEditor.disabled = true;
-          mdRendered.innerHTML = "";
-          mdRendered.classList.add("hidden");
-          mdPlaceholder.textContent = "Nothing to preview yet.";
-          mdPlaceholder.classList.remove("hidden");
-        }
-
-        function setFile(file) {
-          selectedFile = file;
-          if (file && pdfUrlInput) pdfUrlInput.value = "";
-          syncImportActionButtons();
-          if (file && !importInFlight) {
-            runImport("blank");
-          }
-        }
-
-        function revokePdfUrl() {
-          if (pdfObjectUrl) {
-            URL.revokeObjectURL(pdfObjectUrl);
-            pdfObjectUrl = null;
-          }
-          pdfFrame.removeAttribute("src");
-        }
-
-        function finishConversionSuccess(data, pdfSetup) {
-          lastImportMode = pendingImportMode;
-          documentId = data.document_id || null;
-          extractDeferred = !!data.extract_deferred;
-          rawMarkdown = data.markdown || "";
-          lastImages = data.images || {};
-          lastBase =
-            (data.filename_base || "converted").replace(/[^\w\-]+/g, "_") || "converted";
-
-          if (!documentId) {
-            throw new Error("Server did not return a document_id.");
-          }
-
-          revokePdfUrl();
-          if (data.pdf_via_server) {
-            pdfFrame.src = apiUrl("/api/document/" + encodeURIComponent(documentId) + "/pdf");
-            workspaceTitle.textContent =
-              (pdfSetup.file && pdfSetup.file.name) ||
-              pdfSetup.title ||
-              data.filename_base ||
-              "Document";
-          } else if (pdfSetup.mode === "blob" && pdfSetup.file) {
-            pdfObjectUrl = URL.createObjectURL(pdfSetup.file);
-            pdfFrame.src = pdfObjectUrl;
-            workspaceTitle.textContent = pdfSetup.file.name || "Document";
-          } else if (pdfSetup.mode === "server") {
-            pdfFrame.src = apiUrl("/api/document/" + encodeURIComponent(documentId) + "/pdf");
-            workspaceTitle.textContent = pdfSetup.title || data.filename_base || "Document";
-          }
-
-          chatHistory = [];
-          chatMessages.innerHTML = "";
-
-          mdEditor.disabled = false;
-          mdEditor.value = rawMarkdown || "";
-          setPreviewSourceMode("working");
-
-          openDocumentUI();
-          syncExtractPdfButton();
-          syncImportModeUi();
-          syncImportActionButtons();
-        }
-
-        function appendChatBubble(role, text) {
-          var wrap = document.createElement("div");
-          wrap.className = "chat-bubble " + (role === "user" ? "user" : "assistant");
-          var who = document.createElement("div");
-          who.className = "who";
-          who.textContent = role === "user" ? "You" : "Assistant";
-          var body = document.createElement("div");
-          body.textContent = text;
-          wrap.appendChild(who);
-          wrap.appendChild(body);
-          chatMessages.appendChild(wrap);
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function resetWorkspace() {
-          revokePdfUrl();
-          documentId = null;
-          importInFlight = false;
-          extractDeferred = false;
-          syncExtractPdfButton();
-          rawMarkdown = "";
-          previewSourceMode = "working";
-          if (viewToggleOriginalConversion) viewToggleOriginalConversion.checked = false;
-          lastImages = {};
-          chatHistory = [];
-          chatMessages.innerHTML = "";
-          chatInput.value = "";
-          resetFirstPassOptions();
-          clearMdPreview();
-          showWorkspaceError("");
-          prevViewOrderKey = "";
-          if (pdfUrlInput) pdfUrlInput.value = "";
-          syncImportActionButtons();
-          closeDocumentUI();
-        }
-
-        drop.addEventListener("click", function (e) {
-          if (e.target === fileInput) return;
-          fileInput.click();
-        });
-        drop.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            fileInput.click();
-          }
-        });
-        ["dragenter", "dragover"].forEach(function (ev) {
-          drop.addEventListener(ev, function (e) {
-            e.preventDefault();
-            drop.classList.add("dragover");
-          });
-        });
-        ["dragleave", "drop"].forEach(function (ev) {
-          drop.addEventListener(ev, function (e) {
-            e.preventDefault();
-            drop.classList.remove("dragover");
-          });
-        });
-        drop.addEventListener("drop", function (e) {
-          var f = e.dataTransfer.files && e.dataTransfer.files[0];
-          if (f && isPdfFile(f)) {
-            setFile(f);
-            showUploadError("");
-          } else if (f) {
-            showUploadError("Please drop a PDF (.pdf).");
-          }
-        });
-        fileInput.addEventListener("change", function () {
-          var f = fileInput.files && fileInput.files[0];
-          if (!f) {
-            setFile(null);
-            return;
-          }
-          if (!isPdfFile(f)) {
-            showUploadError("Please choose a PDF (.pdf).");
-            fileInput.value = "";
-            setFile(null);
-            return;
-          }
-          setFile(f);
-          showUploadError("");
-        });
-
-        if (pdfUrlInput) {
-          pdfUrlInput.addEventListener("input", syncImportActionButtons);
-          pdfUrlInput.addEventListener("change", syncImportActionButtons);
-        }
-        syncImportActionButtons();
-        closeDocumentUI();
-
-        function equationHandlingValue() {
-          var cb = document.getElementById("optMathEqImages");
-          return cb && cb.checked ? "image" : "markdown";
-        }
-
-        function mathInlineCodePayload() {
-          return equationHandlingValue() === "markdown";
-        }
-
-        function extractPdfFromServer() {
-          if (!documentId || !extractDeferred) return;
-          var btn = document.getElementById("btnExtractPdf");
-          var prev = btn && btn.textContent;
-          if (btn) {
-            btn.disabled = true;
-            btn.textContent = "Extracting…";
-          }
-          setAgentProgress(true, "Extracting Markdown from PDF…");
-          fetch(apiUrl("/api/extract-markdown"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              document_id: documentId,
-              strip_page_numbers: !!document.getElementById("optStripPages").checked,
-              strip_citations: false,
-              equation_handling: equationHandlingValue(),
-              math_inline_code: mathInlineCodePayload(),
-            }),
-          })
-            .then(function (res) {
-              var ct = (res.headers.get("content-type") || "").toLowerCase();
-              return (ct.indexOf("application/json") >= 0 ? res.json() : Promise.resolve({})).then(function (data) {
-                return { res: res, data: data };
-              });
-            })
-            .then(function (_ref) {
-              var res = _ref.res;
-              var data = _ref.data;
-              if (!res.ok) throw new Error(formatApiError(data, res));
-              extractDeferred = !!data.extract_deferred;
-              rawMarkdown = data.markdown || "";
-              lastImages = data.images || {};
-              if (data.filename_base) {
-                lastBase = String(data.filename_base).replace(/[^\w\-]+/g, "_") || lastBase;
-              }
-              setEditorMarkdown(rawMarkdown);
-              syncExtractPdfButton();
-              syncImportModeUi();
-              syncImportActionButtons();
-              showWorkspaceError("");
-            })
-            .catch(function (e) {
-              showWorkspaceError(e.message || String(e));
-            })
-            .finally(function () {
-              setAgentProgress(false);
-              if (btn) {
-                btn.disabled = false;
-                btn.textContent = prev || "Extract Markdown from PDF";
-              }
-            });
-        }
-
-        btnOtherPdf.addEventListener("click", function () {
-          fileInput.value = "";
-          setFile(null);
-          resetWorkspace();
-        });
-
-        var btnExtractPdfEl = document.getElementById("btnExtractPdf");
-        if (btnExtractPdfEl) btnExtractPdfEl.addEventListener("click", extractPdfFromServer);
-
-        function runImport(mode) {
-          if (importInFlight) return;
-          if (!hasImportSource()) {
-            showUploadError("Add a PDF file or a valid PDF URL first.");
-            return;
-          }
-          pendingImportMode = mode;
-          if (mode === "extract") showExtractOptionsUi = true;
-          if (mode === "blank") showExtractOptionsUi = false;
-          syncImportModeUi();
-
-          importInFlight = true;
-          syncImportActionButtons();
-          showUploadError("");
-
-          var doExtract = importExtractsMarkdownForMode(mode);
-
-          function endImport() {
-            importInFlight = false;
-            syncImportActionButtons();
-          }
-
-          function onNetErr(e) {
-            if (e instanceof TypeError && e.message === "Failed to fetch") {
-              showUploadError("Network error — use the app URL (not file://).");
-            } else {
-              showUploadError(e.message || String(e));
-            }
-          }
-
-          if (selectedFile) {
-            var body = new FormData();
-            body.append("file", selectedFile, selectedFile.name);
-            body.append(
-              "strip_page_numbers",
-              document.getElementById("optStripPages").checked ? "true" : "false"
-            );
-            body.append("strip_citations", "false");
-            body.append("equation_handling", equationHandlingValue());
-            body.append("math_inline_code", mathInlineCodePayload() ? "true" : "false");
-            body.append("extract_markdown", doExtract ? "true" : "false");
-            fetch(apiUrl("/api/convert"), { method: "POST", body })
-              .then(function (res) {
-                var ct = (res.headers.get("content-type") || "").toLowerCase();
-                return (ct.indexOf("application/json") >= 0 ? res.json() : Promise.resolve({})).then(function (data) {
-                  return { res: res, data: data };
-                });
-              })
-              .then(function (_ref) {
-                if (!_ref.res.ok) throw new Error(formatApiError(_ref.data, _ref.res));
-                finishConversionSuccess(_ref.data, { mode: "blob", file: selectedFile });
-              })
-              .catch(onNetErr)
-              .finally(endImport);
-          } else {
-            var url = (pdfUrlInput.value || "").trim();
-            if (url.indexOf("http://") !== 0 && url.indexOf("https://") !== 0) {
-              showUploadError("URL must start with http:// or https://");
-              endImport();
-              return;
-            }
-            fetch(apiUrl("/api/convert-from-url"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                url: url,
-                strip_page_numbers: !!document.getElementById("optStripPages").checked,
-                strip_citations: false,
-                equation_handling: equationHandlingValue(),
-                math_inline_code: mathInlineCodePayload(),
-                extract_markdown: doExtract,
-              }),
-            })
-              .then(function (res) {
-                var ct = (res.headers.get("content-type") || "").toLowerCase();
-                return (ct.indexOf("application/json") >= 0 ? res.json() : Promise.resolve({})).then(function (data) {
-                  return { res: res, data: data };
-                });
-              })
-              .then(function (_ref) {
-                if (!_ref.res.ok) throw new Error(formatApiError(_ref.data, _ref.res));
-                finishConversionSuccess(_ref.data, {
-                  mode: "server",
-                  title: _ref.data.filename_base || "Document",
-                });
-              })
-              .catch(onNetErr)
-              .finally(endImport);
-          }
-        }
-
-        var btnImportUrl = document.getElementById("btnImportUrl");
-        if (btnImportUrl) btnImportUrl.addEventListener("click", function () { runImport("blank"); });
-        var btnConvertMarkdown = document.getElementById("btnConvertMarkdown");
-        if (btnConvertMarkdown) btnConvertMarkdown.addEventListener("click", function () { runImport("extract"); });
-
-        function currentDownloadMarkdown() {
-          var t = (mdEditor.value || "").trim();
-          if (t) return mdEditor.value;
-          return rawMarkdown || "";
-        }
-
-        function agentLoadingUi() {
-          setNotionPreviewEditable(false);
-          updatePreviewFromEditor();
-          if (chatMessages) {
-            try {
-              chatMessages.scrollTop = chatMessages.scrollHeight;
-            } catch (e2) {}
-          }
-        }
-
-        function syncStreamToggleState() {}
-
-        function consumeAgentSse(res, streamFrozenBase) {
-          streamFrozenBase = streamFrozenBase || "";
-          return new Promise(function (resolve, reject) {
-            var reader = res.body.getReader();
-            var dec = new TextDecoder();
-            var buf = "";
-            var acc = "";
-            var settled = false;
-            var fragmentStream = false;
-
-            function pump() {
-              reader.read().then(
-                function (r) {
-                  if (settled) return;
-                  if (r.done) {
-                    if (!settled) {
-                      settled = true;
-                      reject(new Error("Stream closed before completion."));
-                    }
-                    return;
-                  }
-                  buf += dec.decode(r.value, { stream: true });
-                  var ix;
-                  while ((ix = buf.indexOf("\n\n")) >= 0) {
-                    var block = buf.slice(0, ix);
-                    buf = buf.slice(ix + 2);
-                    var ev = "";
-                    var dataStr = "";
-                    block.split("\n").forEach(function (ln) {
-                      if (ln.indexOf("event:") === 0) ev = ln.slice(6).trim();
-                      else if (ln.indexOf("data:") === 0) dataStr = ln.slice(5).trim();
-                    });
-                    if (!ev || dataStr === "") continue;
-                    var j;
-                    try {
-                      j = JSON.parse(dataStr);
-                    } catch (e) {
-                      continue;
-                    }
-                    if (ev === "meta") {
-                      fragmentStream = !!j.fragment_stream;
-                    } else if (ev === "token") {
-                      acc += j.d || "";
-                      if (fragmentStream) {
-                        mdEditor.value = acc.trim()
-                          ? acc + "\n\n---\n\n" + streamFrozenBase
-                          : streamFrozenBase;
-                      } else {
-                        mdEditor.value = acc;
-                      }
-                      scheduleLivePreview();
-                    } else if (ev === "done") {
-                      settled = true;
-                      var finalMd = j.markdown != null ? j.markdown : acc;
-                      resolve({
-                        assistant_message: j.assistant_message || "Done.",
-                        markdown: finalMd,
-                      });
-                      return;
-                    } else if (ev === "error") {
-                      settled = true;
-                      reject(new Error(j.detail || "Stream error"));
-                      return;
-                    }
-                  }
-                  pump();
-                },
-                function (err) {
-                  if (!settled) {
-                    settled = true;
-                    reject(err);
-                  }
-                }
-              );
-            }
-            pump();
-          });
-        }
-
-        function withAgentStreamRound() {
-          try {
-            assertMistralKeyIfNeeded();
-          } catch (eKey) {
-            return Promise.reject(eKey);
-          }
-          setAgentProgress(true, "Streaming…");
-          chatSend.disabled = true;
-          var sendLabel = chatSend.textContent;
-          chatSend.textContent = "…";
-          if (chatInput) chatInput.disabled = true;
-          agentLoadingUi();
-          setPreviewSourceMode("working");
-          var streamFrozenBase = mdEditor.value || "";
-          return fetch(apiUrl("/api/agent-stream"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "text/event-stream",
-            },
-            body: JSON.stringify({
-              document_id: documentId,
-              provider: llmProvider && llmProvider.value ? llmProvider.value : "mistral",
-              model: llmModel && llmModel.value ? llmModel.value : null,
-              messages: chatHistory,
-              current_markdown: markdownForApi(),
-              instruction_prefix: null,
-              apply_to_document: true,
-              mistral_api_key: mistralApiKeyPayload(),
-            }),
-          })
-            .then(function (res) {
-              if (!res.ok) {
-                return res
-                  .json()
-                  .catch(function () {
-                    return {};
-                  })
-                  .then(function (data) {
-                    throw new Error(formatApiError(data, res));
-                  });
-              }
-              var ct = (res.headers.get("content-type") || "").toLowerCase();
-              if (ct.indexOf("text/event-stream") < 0) {
-                return res.text().then(function (t) {
-                  throw new Error("Expected event stream. Got: " + (t || "").slice(0, 200));
-                });
-              }
-              return consumeAgentSse(res, streamFrozenBase);
-            })
-            .then(function (out) {
-              var assistantText = out.assistant_message || "Done.";
-              if (!assistantText || !String(assistantText).trim()) {
-                throw new Error("Assistant returned an empty reply.");
-              }
-              chatHistory.push({ role: "assistant", content: assistantText });
-              appendChatBubble("assistant", assistantText);
-              setEditorMarkdown(out.markdown != null ? out.markdown : mdEditor.value);
-              setNotionPreviewEditable(true);
-            })
-            .catch(function (err) {
-              handleAgentError(err);
-            })
-            .finally(function () {
-              setAgentProgress(false);
-              if (chatInput) chatInput.disabled = false;
-              chatSend.disabled = false;
-              chatSend.textContent = sendLabel;
-            });
-        }
-
-        function handleAgentError(err) {
-          chatHistory.pop();
-          var bubbles = chatMessages.querySelectorAll(".chat-bubble.user");
-          if (bubbles.length) bubbles[bubbles.length - 1].remove();
-          showWorkspaceError(err.message || String(err));
-          if (!(mdEditor.value || "").trim()) {
-            mdRendered.innerHTML = "";
-            mdRendered.classList.add("hidden");
-            mdPlaceholder.classList.remove("hidden");
-          } else {
-            updatePreviewFromEditor();
-          }
-        }
-
-        function withAgentRound() {
-          return withAgentStreamRound();
-        }
-
-        function sendChat() {
-          if (!documentId) {
-            showWorkspaceError("Import a PDF (file or URL) first.");
-            return;
-          }
-          var text = (chatInput.value || "").trim();
-          if (!text) return;
-          showWorkspaceError("");
-          chatInput.value = "";
-
-          chatHistory.push({ role: "user", content: text });
-          appendChatBubble("user", text);
-          withAgentRound();
-        }
-
-        chatSend.addEventListener("click", sendChat);
-        chatInput.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            sendChat();
-          }
-        });
-        (function bindNotionPreviewEditSync() {
-          function syncPreviewDomToMarkdownSource() {
-            if (mdRendered.getAttribute("contenteditable") !== "true") return;
-            try {
-              var out = turndownService.turndown(mdRendered);
-              mdEditor.value = restoreDataUriImagesToPaths(out);
-            } catch (e) {
-              console.warn("turndown", e);
-            }
-          }
-          mdRendered.addEventListener("input", function () {
-            if (mdRendered.getAttribute("contenteditable") !== "true") return;
-            clearTimeout(previewSyncTimer);
-            previewSyncTimer = setTimeout(function () {
-              syncPreviewDomToMarkdownSource();
-              if (previewSourceMode !== "working" || mdRendered.classList.contains("hidden")) return;
-              var off = getCaretOffsetInRoot(mdRendered);
-              updatePreviewFromEditor();
-              requestAnimationFrame(function () {
-                var maxLen = (mdRendered.innerText || "").length;
-                setCaretOffsetInRoot(mdRendered, Math.min(off, maxLen));
-              });
-            }, 180);
-          });
-          mdRendered.addEventListener("blur", function () {
-            if (mdRendered.getAttribute("contenteditable") !== "true") return;
-            clearTimeout(previewSyncTimer);
-            syncPreviewDomToMarkdownSource();
-            updatePreviewFromEditor();
-          });
-          mdRendered.addEventListener("paste", function (e) {
-            if (mdRendered.getAttribute("contenteditable") !== "true") return;
-            e.preventDefault();
-            var text = e.clipboardData.getData("text/plain") || "";
-            document.execCommand("insertText", false, text);
-          });
-          if (typeof InputEvent !== "undefined" && "inputType" in InputEvent.prototype) {
-            mdRendered.addEventListener("beforeinput", function (e) {
-              if (mdRendered.getAttribute("contenteditable") !== "true") return;
-              if (previewSourceMode !== "working") return;
-              if (e.inputType !== "insertText" || e.data == null) return;
-              if (e.data === " ") {
-                if (tryApplyBlockMarkdownShortcut()) {
-                  e.preventDefault();
-                  mdRendered.dispatchEvent(new Event("input", { bubbles: true }));
-                }
-                return;
-              }
-              if (e.data === "*") {
-                tryApplyClosingBoldShortcut(e);
-              }
-            });
-          }
-          mdRendered.addEventListener("keydown", function (e) {
-            if (mdRendered.getAttribute("contenteditable") !== "true") return;
-            if (previewSourceMode !== "working") return;
-            if (tryApplyHrOnEnter(e)) return;
-            if (typeof InputEvent !== "undefined" && "inputType" in InputEvent.prototype) return;
-            if (e.key === " " && !e.ctrlKey && !e.metaKey && !e.altKey) {
-              if (tryApplyBlockMarkdownShortcut()) {
-                e.preventDefault();
-                mdRendered.dispatchEvent(new Event("input", { bubbles: true }));
-              }
-              return;
-            }
-            if (e.key === "*" && !e.ctrlKey && !e.metaKey && !e.altKey) {
-              var fe = {
-                data: "*",
-                preventDefault: function () {
-                  e.preventDefault();
-                },
-              };
-              tryApplyClosingBoldShortcut(fe);
-            }
-          });
-        })();
-
-        function downloadBlob(blob, filename) {
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = filename;
-          a.click();
-          URL.revokeObjectURL(a.href);
-        }
-
-        dlMd.addEventListener("click", function () {
-          var mdText = currentDownloadMarkdown();
-          if (!mdText) return;
-          downloadBlob(new Blob([mdText], { type: "text/markdown;charset=utf-8" }), lastBase + ".md");
-        });
-
-        dlZip.addEventListener("click", function () {
-          var mdText = currentDownloadMarkdown();
-          if (!mdText) return;
-          var zip = new JSZip();
-          zip.file("converted.md", mdText);
-          var folder = zip.folder("images");
-          Object.keys(lastImages).forEach(function (relPath) {
-            var b64 = lastImages[relPath];
-            var name = relPath.replace(/^images\//, "");
-            if (!name || !folder) return;
-            var bin = Uint8Array.from(atob(b64), function (c) {
-              return c.charCodeAt(0);
-            });
-            folder.file(name, bin);
-          });
-          zip.generateAsync({ type: "blob" }).then(function (blob) {
-            downloadBlob(blob, lastBase + ".zip");
-          });
-        });
-
-        if (dlDocx) {
-          dlDocx.addEventListener("click", function () {
-            var mdText = restoreDataUriImagesToPaths(currentDownloadMarkdown());
-            if (!mdText || !String(mdText).trim()) return;
-            dlDocx.disabled = true;
-            fetch(apiUrl("/api/export-docx"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                markdown: mdText,
-                filename_base: lastBase,
-                images: lastImages,
-                include_images: true,
-              }),
-            })
-              .then(function (res) {
-                if (!res.ok) {
-                  return res.text().then(function (t) {
-                    var data = parseApiJsonBody(res, t);
-                    throw new Error(formatApiError(data, res));
-                  });
-                }
-                return res.blob();
-              })
-              .then(function (blob) {
-                downloadBlob(blob, lastBase + ".docx");
-              })
-              .catch(function (e) {
-                showWorkspaceError(e.message || String(e));
-              })
-              .finally(function () {
-                dlDocx.disabled = false;
-              });
-          });
-        }
-
-        var notionExportPanel = document.getElementById("notionExportPanel");
-        var toggleNotionExportBtn = document.getElementById("toggleNotionExportBtn");
-        if (toggleNotionExportBtn && notionExportPanel) {
-          toggleNotionExportBtn.addEventListener("click", function () {
-            notionExportPanel.classList.toggle("hidden");
-            var expanded = !notionExportPanel.classList.contains("hidden");
-            toggleNotionExportBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
-            toggleNotionExportBtn.textContent = expanded ? "Hide Notion export" : "Add to Notion";
-          });
-        }
-
-        var notionDatabaseInput = document.getElementById("notionDatabaseId");
-        try {
-          var savedDb = localStorage.getItem("notion_database_id");
-          if (savedDb && notionDatabaseInput) notionDatabaseInput.value = savedDb;
-        } catch (eN0) {}
-        if (notionDatabaseInput) {
-          notionDatabaseInput.addEventListener("change", function () {
-            try {
-              localStorage.setItem("notion_database_id", notionDatabaseInput.value || "");
-            } catch (eN1) {}
-          });
-        }
-
-        function normalizeNotionIntegrationToken(s) {
-          if (s == null || s === "") return "";
-          var t = String(s).replace(/\uFEFF/g, "").trim();
-          t = t.replace(/[\u200B-\u200D\u2060]/g, "").trim();
-          t = t.replace(/\r/g, "").replace(/\n/g, "").trim();
-          if (/^bearer\s+/i.test(t)) t = t.replace(/^bearer\s+/i, "").trim();
-          if (
-            (t.charAt(0) === '"' && t.charAt(t.length - 1) === '"') ||
-            (t.charAt(0) === "'" && t.charAt(t.length - 1) === "'")
-          ) {
-            t = t.slice(1, -1).trim();
-          }
-          return t;
-        }
-
-        var lastNotionPropertyRows = null;
-
-        function renderNotionPropertyFields(rows, suggested) {
-          var container = document.getElementById("notionPropsFields");
-          var wrap = document.getElementById("notionPropsWrap");
-          if (!container || !wrap) return;
-          container.innerHTML = "";
-          suggested = suggested || {};
-          lastNotionPropertyRows = rows && rows.length ? rows.slice() : [];
-          if (!rows || !rows.length) {
-            wrap.classList.add("hidden");
-            return;
-          }
-          wrap.classList.remove("hidden");
-          rows.forEach(function (row) {
-            var name = row.name;
-            var typ = row.type || "rich_text";
-            var def = Object.prototype.hasOwnProperty.call(suggested, name)
-              ? String(suggested[name] == null ? "" : suggested[name])
-              : "";
-            var lab = document.createElement("label");
-            lab.className = "notion-export-label";
-            var id =
-              "np_" +
-              String(name)
-                .replace(/[^a-z0-9]+/gi, "_")
-                .replace(/^_|_$/g, "")
-                .slice(0, 40) +
-              "_" +
-              Math.random().toString(36).slice(2, 8);
-            lab.setAttribute("for", id);
-            lab.textContent = name + " (" + typ + ")";
-            container.appendChild(lab);
-            var input;
-            if (typ === "select" || typ === "status") {
-              input = document.createElement("select");
-              var z0 = document.createElement("option");
-              z0.value = "";
-              z0.textContent = "—";
-              input.appendChild(z0);
-              (row.options || []).forEach(function (opt) {
-                var o = document.createElement("option");
-                o.value = opt;
-                o.textContent = opt;
-                input.appendChild(o);
-              });
-            } else if (typ === "multi_select") {
-              input = document.createElement("input");
-              input.type = "text";
-              input.placeholder = "Comma-separated";
-            } else if (typ === "checkbox") {
-              input = document.createElement("input");
-              input.type = "checkbox";
-            } else if (typ === "date") {
-              input = document.createElement("input");
-              input.type = "date";
-            } else if (typ === "number") {
-              input = document.createElement("input");
-              input.type = "number";
-              input.step = "any";
-            } else if (typ === "url") {
-              input = document.createElement("input");
-              input.type = "url";
-            } else {
-              input = document.createElement("input");
-              input.type = "text";
-            }
-            input.id = id;
-            if (typ === "checkbox") {
-              input.className = "notion-export-field";
-              input.style.margin = "0 0 0.5rem 0";
-            } else {
-              input.className = "field block notion-export-field";
-            }
-            input.setAttribute("data-notion-prop", name);
-            input.setAttribute("data-notion-prop-type", typ);
-            if (typ === "checkbox") {
-              if (def === "true" || def === "1") input.checked = true;
-            } else if (def) {
-              input.value = def;
-            }
-            container.appendChild(input);
-          });
-        }
-
-        function collectNotionExtraProperties() {
-          var root = document.getElementById("notionPropsFields");
-          if (!root) return {};
-          var out = {};
-          root.querySelectorAll("[data-notion-prop]").forEach(function (el) {
-            var name = el.getAttribute("data-notion-prop");
-            if (!name) return;
-            var typ = el.getAttribute("data-notion-prop-type") || "";
-            if (typ === "checkbox") {
-              if (el.checked) out[name] = "true";
-              return;
-            }
-            var v = (el.value || "").trim();
-            if (v) out[name] = v;
-          });
-          return out;
-        }
-
-        var notionInspectBtn = document.getElementById("notionInspectBtn");
-        if (notionInspectBtn) {
-          notionInspectBtn.addEventListener("click", function () {
-            var tokenEl = document.getElementById("notionToken");
-            var dbEl = document.getElementById("notionDatabaseId");
-            var st = document.getElementById("notionInspectStatus");
-            var token = normalizeNotionIntegrationToken(tokenEl && tokenEl.value ? tokenEl.value : "");
-            var db = dbEl && dbEl.value ? dbEl.value.trim() : "";
-            var mdText = currentDownloadMarkdown();
-            if (!token) {
-              showWorkspaceError("Paste your Notion integration secret.");
-              return;
-            }
-            if (!db) {
-              showWorkspaceError("Paste your Notion database URL or ID.");
-              return;
-            }
-            notionInspectBtn.disabled = true;
-            if (st) st.textContent = "Checking Notion…";
-            fetch(apiUrl("/api/notion/inspect"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                notion_token: token,
-                database_id: db,
-                markdown: mdText && String(mdText).trim() ? mdText : null,
-              }),
-            })
-              .then(function (res) {
-                return res.text().then(function (text) {
-                  var data = parseApiJsonBody(res, text);
-                  if (!res.ok) throw new Error(formatApiError(data, res));
-                  return data;
-                });
-              })
-              .then(function (data) {
-                if (st) {
-                  st.textContent = "";
-                  var ok = document.createElement("span");
-                  ok.textContent =
-                    "Connected as " +
-                    (data.notion_user && data.notion_user.name ? data.notion_user.name : "integration") +
-                    ". ";
-                  st.appendChild(ok);
-                }
-                renderNotionPropertyFields(data.properties || [], data.suggested_defaults || {});
-              })
-              .catch(function (err) {
-                if (st) st.textContent = "";
-                renderNotionPropertyFields([], {});
-                showWorkspaceError(err.message || String(err));
-              })
-              .finally(function () {
-                notionInspectBtn.disabled = false;
-              });
-          });
-        }
-
-        var notionAiFillPropsBtn = document.getElementById("notionAiFillPropsBtn");
-        if (notionAiFillPropsBtn) {
-          notionAiFillPropsBtn.addEventListener("click", function () {
-            var st = document.getElementById("notionInspectStatus");
-            var mdText = currentDownloadMarkdown();
-            if (!lastNotionPropertyRows || !lastNotionPropertyRows.length) {
-              showWorkspaceError('Click "Check connection & load properties" first.');
-              return;
-            }
-            if (!mdText || !String(mdText).trim()) {
-              showWorkspaceError("Nothing to analyze — load a document first.");
-              return;
-            }
-            try {
-              assertMistralKeyIfNeeded();
-            } catch (eK) {
-              showWorkspaceError(eK.message || String(eK));
-              return;
-            }
-            var hintEl = document.getElementById("notionPropsAiHint");
-            var hint = hintEl && hintEl.value ? hintEl.value.trim() : "";
-            notionAiFillPropsBtn.disabled = true;
-            if (st) st.textContent = (st.textContent || "") + " Asking AI for property values…";
-            fetch(apiUrl("/api/notion/suggest-properties"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                markdown: mdText,
-                properties: lastNotionPropertyRows,
-                user_hint: hint || null,
-                provider: llmProvider && llmProvider.value ? llmProvider.value : "mistral",
-                model: llmModel && llmModel.value ? llmModel.value : null,
-                mistral_api_key: mistralApiKeyPayload(),
-              }),
-            })
-              .then(function (res) {
-                return res.text().then(function (text) {
-                  var data = parseApiJsonBody(res, text);
-                  if (!res.ok) throw new Error(formatApiError(data, res));
-                  return data;
-                });
-              })
-              .then(function (data) {
-                var pv = data.property_values || {};
-                var root = document.getElementById("notionPropsFields");
-                if (root) {
-                  root.querySelectorAll("[data-notion-prop]").forEach(function (el) {
-                    var name = el.getAttribute("data-notion-prop");
-                    if (!name || !Object.prototype.hasOwnProperty.call(pv, name)) return;
-                    var v = pv[name];
-                    if (v == null || String(v).trim() === "") return;
-                    var typ = el.getAttribute("data-notion-prop-type") || "";
-                    if (typ === "checkbox") {
-                      el.checked = /^true|1|yes|on$/i.test(String(v).trim());
-                    } else {
-                      el.value = String(v).trim();
-                    }
-                  });
-                }
-                if (st && data.assistant_message) {
-                  st.textContent =
-                    (st.textContent || "").replace(/\s*Asking AI for property values…\s*$/, "").trim() + " " + data.assistant_message;
-                }
-              })
-              .catch(function (err) {
-                showWorkspaceError(err.message || String(err));
-              })
-              .finally(function () {
-                notionAiFillPropsBtn.disabled = false;
-                if (st) st.textContent = (st.textContent || "").replace(/\s*Asking AI for property values…\s*/, " ").trim();
-              });
-            });
-        }
-
-        var exportNotionBtn = document.getElementById("exportNotionBtn");
-        if (exportNotionBtn) {
-          exportNotionBtn.addEventListener("click", function () {
-            var tokenEl = document.getElementById("notionToken");
-            var dbEl = document.getElementById("notionDatabaseId");
-            var titleEl = document.getElementById("notionPageTitle");
-            var st = document.getElementById("notionExportStatus");
-            var token = normalizeNotionIntegrationToken(tokenEl && tokenEl.value ? tokenEl.value : "");
-            var db = dbEl && dbEl.value ? dbEl.value.trim() : "";
-            var pageTitle = titleEl && titleEl.value ? titleEl.value.trim() : "";
-            var mdText = currentDownloadMarkdown();
-            if (!mdText || !String(mdText).trim()) {
-              showWorkspaceError("Nothing to export yet.");
-              return;
-            }
-            if (!token) {
-              showWorkspaceError("Paste your Notion integration secret.");
-              return;
-            }
-            if (!db) {
-              showWorkspaceError("Paste your Notion database URL or ID.");
-              return;
-            }
-            exportNotionBtn.disabled = true;
-            if (st) st.textContent = "Sending to Notion…";
-            fetch(apiUrl("/api/notion/export"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                notion_token: token,
-                database_id: db,
-                title: pageTitle || null,
-                markdown: mdText,
-                images: lastImages || {},
-                include_images: !(
-                  document.getElementById("notionOmitImages") &&
-                  document.getElementById("notionOmitImages").checked
-                ),
-              }),
-            })
-              .then(function (res) {
-                return res.text().then(function (text) {
-                  var data = parseApiJsonBody(res, text);
-                  if (!res.ok) throw new Error(formatApiError(data, res));
-                  return data;
-                });
-              })
-              .then(function (data) {
-                if (!st) return;
-                st.textContent = "";
-                var u = data.notion_url || "";
-                if (u) {
-                  var a = document.createElement("a");
-                  a.href = u;
-                  a.target = "_blank";
-                  a.rel = "noopener noreferrer";
-                  a.textContent = "Open page in Notion";
-                  st.appendChild(a);
-                }
-                var w = data.warnings;
-                if (w && w.length) {
-                  var span = document.createElement("span");
-                  span.textContent = (u ? " · " : "") + w.join(" ");
-                  st.appendChild(span);
-                }
-                if (!u && (!w || !w.length)) st.textContent = "Done.";
-              })
-              .catch(function (err) {
-                if (st) st.textContent = "";
-                showWorkspaceError(err.message || String(err));
-              })
-              .finally(function () {
-                exportNotionBtn.disabled = false;
-              });
-          });
-        }
-
-        copyMd.addEventListener("click", function () {
-          var mdText = currentDownloadMarkdown();
-          if (!mdText) return;
-          navigator.clipboard.writeText(mdText).then(
-            function () {
-              copyMd.textContent = "Copied!";
-              setTimeout(function () {
-                copyMd.textContent = "Copy Markdown";
-              }, 2000);
-            },
-            function () {
-              showWorkspaceError("Could not copy to clipboard.");
-            }
-          );
-        });
-      })();
-    </script>
+    <script src="/static/js/smartdown-workspace.js"></script>
   </body>
 </html>

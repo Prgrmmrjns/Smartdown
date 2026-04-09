@@ -336,6 +336,24 @@ def _parse_agent_payload(content: str) -> tuple[str, str]:
     return md.strip(), msg.strip()
 
 
+def _parse_block_note_payload(content: str) -> tuple[str, str]:
+    raw = _strip_json_fence(content)
+    data = _loads_llm_json_object(raw)
+    note = data.get("note_markdown")
+    if not isinstance(note, str) or not note.strip():
+        raise ValueError('JSON must include non-empty string "note_markdown"')
+    note = note.strip()
+    msg = data.get("assistant_message")
+    if isinstance(msg, str) and msg.strip():
+        return note, msg.strip()
+    alt = _json_assistant_string(
+        data, skip_keys_ci=frozenset({"note_markdown", "notemarkdown"})
+    )
+    if alt:
+        return note, alt
+    return note, "Added note bullet."
+
+
 def _parse_qa_payload(content: str) -> str:
     raw = _strip_json_fence(content)
     data = _loads_llm_json_object(raw)

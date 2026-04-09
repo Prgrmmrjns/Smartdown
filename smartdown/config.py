@@ -22,26 +22,22 @@ URL_FETCH_MAX_REDIRECTS = 8
 MISTRAL_MODEL = os.environ.get("MISTRAL_MODEL", "mistral-small-latest")
 MISTRAL_MODEL_IDS = frozenset({"mistral-small-latest", "mistral-large-latest"})
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+MISTRAL_API_KEY = (os.environ.get("MISTRAL_API_KEY") or "").strip()
+# If true, local PDF→MD writes figure/table/formula regions as PNGs under images/.
+MISTRAL_OCR_EXTRACT_IMAGES = os.environ.get(
+    "MISTRAL_OCR_EXTRACT_IMAGES", ""
+).lower() in ("1", "true", "yes")
+SMARTDOWN_PDF_USE_OCR = os.environ.get(
+    "SMARTDOWN_PDF_USE_OCR", "true"
+).lower() in ("1", "true", "yes")
+MISTRAL_STRUCTURE_MODEL = os.environ.get("MISTRAL_STRUCTURE_MODEL", "mistral-small-latest")
+MISTRAL_STRUCTURE_TIMEOUT = float(os.environ.get("MISTRAL_STRUCTURE_TIMEOUT", "600"))
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_CHAT_TIMEOUT = float(os.environ.get("OLLAMA_CHAT_TIMEOUT", "600"))
 OLLAMA_MODELS_CACHE_SEC = float(os.environ.get("OLLAMA_MODELS_CACHE_SEC", "30"))
 OLLAMA_USE_STRUCTURED_FORMAT = os.environ.get(
     "OLLAMA_USE_STRUCTURED_FORMAT", "true"
 ).lower() in ("1", "true", "yes")
-OLLAMA_SCHEMA_AGENT: dict = {
-    "type": "object",
-    "properties": {
-        "markdown": {
-            "type": "string",
-            "description": "The complete updated Markdown document.",
-        },
-        "assistant_message": {
-            "type": "string",
-            "description": "Short summary of changes for the chat UI.",
-        },
-    },
-    "required": ["markdown", "assistant_message"],
-}
 OLLAMA_SCHEMA_QA: dict = {
     "type": "object",
     "properties": {
@@ -51,6 +47,22 @@ OLLAMA_SCHEMA_QA: dict = {
         },
     },
     "required": ["assistant_message"],
+}
+OLLAMA_SCHEMA_BLOCK_NOTE: dict = {
+    "type": "object",
+    "properties": {
+        "note_markdown": {
+            "type": "string",
+            "description": (
+                "Exactly one Markdown bullet: one line '- **Label**: …' or '- **word** …' with a bold span after the hyphen."
+            ),
+        },
+        "assistant_message": {
+            "type": "string",
+            "description": "Very short note for the chat UI.",
+        },
+    },
+    "required": ["note_markdown", "assistant_message"],
 }
 OLLAMA_SCHEMA_NOTION_PROPS: dict = {
     "type": "object",
@@ -76,4 +88,10 @@ MISTRAL_CHARS_PER_TOKEN_EST = float(
 )
 MISTRAL_MAX_DOC_CHARS_CAP = int(os.environ.get("MISTRAL_MAX_DOC_CHARS_CAP", "720000"))
 
-NOTION_API_VERSION = os.environ.get("NOTION_API_VERSION", "2026-03-11")
+# Block append + data sources are well-tested on 2025-09-03; override if you need a newer release.
+NOTION_API_VERSION = (os.environ.get("NOTION_API_VERSION") or "2025-09-03").strip()
+# Optional single-tenant defaults (same vars as scripts/notion_smoke_test.py).
+NOTION_INTEGRATION_SECRET_DEFAULT = (
+    os.environ.get("NOTION_INTEGRATION_SECRET") or ""
+).strip()
+NOTION_PAGE_ID_DEFAULT = (os.environ.get("NOTION_PAGE_ID") or "").strip()

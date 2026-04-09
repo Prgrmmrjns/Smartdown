@@ -16,15 +16,9 @@ from smartdown.config import (
     OLLAMA_CHAT_TIMEOUT,
     OLLAMA_HOST,
     OLLAMA_MODELS_CACHE_SEC,
-    OLLAMA_SCHEMA_AGENT,
-    OLLAMA_SCHEMA_QA,
     OLLAMA_USE_STRUCTURED_FORMAT,
 )
 from smartdown.llm_context import _shrink_markdown_for_mistral_prompt
-from smartdown.agent_fragment import prepend_fragment_to_document, wants_fragment_only_apply
-from smartdown.models import AgentRequest
-from smartdown.prompts import AGENT_STREAM_FRAGMENT_SYSTEM_PROMPT, AGENT_STREAM_SYSTEM_PROMPT
-from smartdown.session import _purge_expired_sessions, _session_lock, _sessions
 
 _ollama_models_cache: tuple[float, list[str]] | None = None
 
@@ -382,131 +376,4 @@ async def _stream_llm_markdown(
             yield x
 
 
-def _stream_edit_summary(last_user: str, merged_note: str) -> str:
-    t = (last_user or "").strip().replace("\n", " ")
-    if len(t) > 100:
-        t = t[:97] + "…"
-    base = f"Applied: {t}" if t else "Document updated."
-    if merged_note:
-        return f"{base} {merged_note}"
-    return base
-
-
-async def _agent_apply_stream(body: AgentRequest) -> AsyncIterator[bytes]:
-    try:
-        if not body.apply_to_document:
-            yield _sse_bytes(
-                "error",
-                {"detail": "Streaming applies only when apply_to_document is true."},
-            )
-            return
-
-        prov, model_id = await _resolve_llm(body.provider, body.model)
-        async with _session_lock:
-            _purge_expired_sessions()
-            session = _sessions.get(body.document_id)
-        if not session:
-            yield _sse_bytes(
-                "error",
-                {"detail": "Unknown or expired document session. Upload the PDF again."},
-            )
-            return
-
-        msgs = body.messages
-        if msgs[-1].role != "user":
-            yield _sse_bytes("error", {"detail": "The last chat message must be from the user."})
-            return
-
-        last_user = msgs[-1].content.strip()
-        if not last_user:
-            yield _sse_bytes("error", {"detail": "Message content cannot be empty."})
-            return
-
-        prefix = (body.instruction_prefix or "").strip()
-        last_user_for_model = f"{prefix}\n\n{last_user}" if prefix else last_user
-
-        context_md_full = (
-            (body.current_markdown or "").strip()
-            or session.beautified_markdown
-            or session.raw_markdown
-            or ""
-        )
-        context_md_model, shrink_extra = _shrink_markdown_for_mistral_prompt(context_md_full)
-
-        conv_lines: list[str] = []
-        for m in msgs[:-1]:
-            label = "User" if m.role == "user" else "Assistant"
-            conv_lines.append(f"{label}: {m.content.strip()}")
-        conv_block = "\n".join(conv_lines) if conv_lines else "(no prior messages)"
-
-        fragment_stream = wants_fragment_only_apply(last_user, prefix, force_full=False)
-        yield _sse_bytes("meta", {"fragment_stream": fragment_stream})
-
-        if fragment_stream:
-            user_content = (
-                f"## Prior conversation\n{conv_block}\n"
-                f"{shrink_extra}"
-                f"## Current markdown\n\n{context_md_model}\n\n"
-                f"## Latest instruction\n\n{last_user_for_model}\n\n"
-                "### Mandatory behavior\n"
-                "- Stream **only** the new Markdown fragment.\n"
-                "- The app prepends it to the editor (with a `---` separator).\n"
-            )
-            api_messages = [
-                {"role": "system", "content": AGENT_STREAM_FRAGMENT_SYSTEM_PROMPT},
-                {"role": "user", "content": user_content},
-            ]
-        else:
-            user_content = (
-                f"## Prior conversation\n{conv_block}\n"
-                f"{shrink_extra}"
-                f"## Current markdown\n\n{context_md_model}\n\n"
-                f"## Latest instruction\n\n{last_user_for_model}\n\n"
-                "Stream the complete updated Markdown file now."
-            )
-            api_messages = [
-                {"role": "system", "content": AGENT_STREAM_SYSTEM_PROMPT},
-                {"role": "user", "content": user_content},
-            ]
-
-        parts: list[str] = []
-        async for frag in _stream_llm_markdown(
-            prov,
-            model_id,
-            api_messages,
-            mistral_api_key=body.mistral_api_key,
-        ):
-            parts.append(frag)
-            yield _sse_bytes("token", {"d": frag})
-
-        streamed = _strip_stream_markdown_fence("".join(parts))
-        if not streamed.strip():
-            yield _sse_bytes("error", {"detail": "Model returned empty Markdown."})
-            return
-
-        new_md = (
-            prepend_fragment_to_document(streamed, context_md_full)
-            if fragment_stream
-            else streamed
-        )
-
-        assistant_message = _stream_edit_summary(last_user, "")
-
-        async with _session_lock:
-            s = _sessions.get(body.document_id)
-            if s:
-                s.beautified_markdown = new_md
-                s.created = time.time()
-
-        yield _sse_bytes(
-            "done",
-            {"assistant_message": assistant_message, "markdown": new_md},
-        )
-    except HTTPException as e:
-        d = e.detail
-        if not isinstance(d, str):
-            d = str(d)
-        yield _sse_bytes("error", {"detail": d})
-    except Exception as e:
-        yield _sse_bytes("error", {"detail": str(e)})
 

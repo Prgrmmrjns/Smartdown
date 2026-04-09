@@ -1,4 +1,4 @@
-"""Notion API: inspect, suggest properties, export markdown to pages."""
+"""Notion API: inspect page properties, sync markdown into an existing page."""
 import base64
 import binascii
 import os
@@ -15,13 +15,43 @@ from smartdown.config import IMAGES_DIR, NOTION_API_VERSION
 
 _NOTION_IMG_INLINE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 
+_NOTION_DATA_URI_IMG_RE = re.compile(
+    r"!\[([^\]]*)\]\(data:image/[a-z0-9.+-]+;base64,([^)]+)\)",
+    re.IGNORECASE,
+)
+
+
+def _notion_restore_data_uri_images(md: str, images_b64: dict[str, str]) -> str:
+    """Mirror upload.html restoreDataUriImagesToPaths — keeps payloads small and paths consistent."""
+    if not md.strip() or not images_b64:
+        return md
+
+    def norm_b64(s: str) -> str:
+        return re.sub(r"\s+", "", s or "")
+
+    inv: dict[str, str] = {}
+    for k, v in images_b64.items():
+        if isinstance(k, str) and isinstance(v, str) and v.strip():
+            nb = norm_b64(v)
+            if nb not in inv:
+                inv[nb] = k
+
+    def repl(m: re.Match[str]) -> str:
+        alt, b64_part = m.group(1), m.group(2)
+        key = inv.get(norm_b64(b64_part))
+        if key:
+            return f"![{alt}]({key})"
+        return f"![{alt}](images/_unknown_inline.png)"
+
+    return _NOTION_DATA_URI_IMG_RE.sub(repl, md)
+
 
 def _notion_markdown_without_images(md: str) -> str:
     t = _NOTION_IMG_INLINE_RE.sub("", md)
     return re.sub(r"\n{3,}", "\n\n", t).strip()
 
 
-def _notion_normalize_database_id(raw: str) -> str:
+def _notion_normalize_page_id(raw: str) -> str:
     s = raw.strip()
     m = re.search(
         r"([0-9a-f]{8})-?([0-9a-f]{4})-?([0-9a-f]{4})-?([0-9a-f]{4})-?([0-9a-f]{12})",
@@ -32,8 +62,8 @@ def _notion_normalize_database_id(raw: str) -> str:
         raise HTTPException(
             status_code=400,
             detail=(
-                "Could not find a Notion database ID. Paste the full database URL from the browser "
-                "or the 32-character hex ID (with or without dashes)."
+                "Could not find a Notion page ID. Paste the full page URL from the browser "
+                "(open the page → copy link) or the 32-character hex ID (with or without dashes)."
             ),
         )
     return f"{m.group(1)}-{m.group(2)}-{m.group(3)}-{m.group(4)}-{m.group(5)}".lower()
@@ -49,6 +79,23 @@ def _notion_err_detail(r: httpx.Response) -> str:
         pass
     t = (r.text or "").strip()
     return (t[:1200] if t else r.reason_phrase or "Notion API error")
+
+
+def _notion_ok_json(r: httpx.Response, doing: str) -> dict:
+    """Parse a successful Notion JSON body; avoid bare r.json() raising and causing HTTP 500."""
+    try:
+        data = r.json()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Notion returned invalid JSON while {doing}.",
+        ) from exc
+    if not isinstance(data, dict):
+        raise HTTPException(
+            status_code=502,
+            detail=f"Notion returned unexpected JSON while {doing}.",
+        )
+    return data
 
 
 def _notion_api_error(r: httpx.Response, doing: str) -> None:
@@ -71,8 +118,9 @@ def _notion_api_error(r: httpx.Response, doing: str) -> None:
             status_code=400,
             detail=(
                 f"Notion returned HTTP 403 while {doing}. "
-                "Open the **database** (the source table, not only a linked view) → **⋯** → "
-                "**Connections** / **Add connections** → add your integration. "
+                "Share the page with the integration (**⋯** → **Connections**), and in "
+                "https://www.notion.so/my-integrations ensure **Update** and **Insert content** "
+                "capabilities are enabled if you use this API for properties and blocks. "
                 f"Notion message: {extra}"
             ),
         )
@@ -298,6 +346,19 @@ def _normalize_notion_image_rel_path(path: str) -> str:
     return p.replace("\\", "/")
 
 
+def _notion_b64_to_bytes(raw: str) -> bytes:
+    """Decode image base64 from API/JSON; avoid standard_b64decode(..., validate=) (breaks on some Python builds)."""
+    s = (raw or "").strip()
+    low = s.lower()
+    if ";base64," in low:
+        s = s[low.index(";base64,") + len(";base64,") :]
+    s = re.sub(r"\s+", "", s)
+    pad = (-len(s)) % 4
+    if pad:
+        s += "=" * pad
+    return base64.b64decode(s)
+
+
 def _lookup_notion_image_bytes(
     images_b64: dict[str, str], norm_key: str
 ) -> tuple[bytes, str, str]:
@@ -309,7 +370,7 @@ def _lookup_notion_image_bytes(
             break
     if not found:
         raise KeyError(norm_key)
-    raw = base64.standard_b64decode(images_b64[found], validate=True)
+    raw = _notion_b64_to_bytes(images_b64[found])
     name = Path(found).name
     ext = Path(name).suffix.lower()
     mime = {
@@ -328,14 +389,14 @@ def _notion_plain_rich_text(s: str) -> list[dict]:
         return [
             {
                 "type": "text",
-                "text": {"content": " ", "link": None},
+                "text": {"content": " "},
             }
         ]
     parts: list[dict] = []
     i = 0
     while i < len(s):
         chunk = s[i : i + 2000]
-        parts.append({"type": "text", "text": {"content": chunk, "link": None}})
+        parts.append({"type": "text", "text": {"content": chunk}})
         i += 2000
     return parts
 
@@ -582,6 +643,10 @@ def _parse_markdown_to_notion_segments(md: str) -> list[dict]:
         i += 1
 
     flush_para()
+    if in_code:
+        segs.append(
+            {"type": "code", "lang": code_lang, "text": "\n".join(code_buf)}
+        )
     return segs
 
 
@@ -603,7 +668,7 @@ async def _notion_create_file_upload(
     )
     if r.status_code != 200:
         _notion_api_error(r, "starting an image upload")
-    data = r.json()
+    data = _notion_ok_json(r, "starting an image upload")
     fid = data.get("id")
     upload_url = data.get("upload_url")
     if not isinstance(fid, str) or not isinstance(upload_url, str):
@@ -671,7 +736,7 @@ async def _notion_resolve_database_export(
     )
     if r.status_code != 200:
         _notion_api_error(r, "reading your database")
-    data = r.json()
+    data = _notion_ok_json(r, "reading your database")
 
     sources = data.get("data_sources") or []
     ds_ids: list[str] = []
@@ -692,7 +757,7 @@ async def _notion_resolve_database_export(
             if rd.status_code in (401, 403):
                 _notion_api_error(rd, "reading the database schema (data source)")
             continue
-        body = rd.json()
+        body = _notion_ok_json(rd, "reading the database schema (data source)")
         dsp = body.get("properties")
         if not isinstance(dsp, dict):
             dsp = {}
@@ -718,6 +783,136 @@ async def _notion_resolve_database_export(
             "a data source exists."
         ),
     )
+
+
+def _notion_schema_from_page_properties(props: dict) -> dict:
+    """Minimal property schema from GET /pages/{id} `properties` (for merge + UI)."""
+    schema: dict[str, dict] = {}
+    for name, val in props.items():
+        if not isinstance(val, dict):
+            continue
+        typ = val.get("type")
+        if not isinstance(typ, str) or typ in _NOTION_READONLY_PROP_TYPES:
+            continue
+        if typ == "title":
+            schema[name] = {"type": "title"}
+        elif typ in ("select", "multi_select", "status"):
+            schema[name] = {"type": typ, typ: {"options": []}}
+        else:
+            schema[name] = {"type": typ}
+    return schema
+
+
+async def _notion_resolve_page_inspect(
+    client: httpx.AsyncClient, token: str, page_id: str
+) -> tuple[str, dict]:
+    """Title column name + full property schema for optional fields and PATCH."""
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Notion-Version": NOTION_API_VERSION,
+    }
+    r = await client.get(
+        f"https://api.notion.com/v1/pages/{page_id}",
+        headers=headers,
+    )
+    if r.status_code != 200:
+        _notion_api_error(r, "reading your Notion page")
+    page = _notion_ok_json(r, "reading your Notion page")
+    props = page.get("properties")
+    if not isinstance(props, dict):
+        props = {}
+    title_prop = _notion_title_property_from_schema(props)
+    if not title_prop:
+        raise HTTPException(
+            status_code=400,
+            detail="This page has no Title property the API can set.",
+        )
+    parent = page.get("parent")
+    if isinstance(parent, dict):
+        if parent.get("type") == "database_id":
+            db_id = parent.get("database_id")
+            if isinstance(db_id, str) and db_id.strip():
+                try:
+                    _, _, db_schema = await _notion_resolve_database_export(
+                        client, token, db_id.strip()
+                    )
+                    return title_prop, db_schema
+                except HTTPException:
+                    pass
+        if parent.get("type") == "data_source_id":
+            ds_id = parent.get("data_source_id")
+            if isinstance(ds_id, str) and ds_id.strip():
+                rd = await client.get(
+                    f"https://api.notion.com/v1/data_sources/{ds_id.strip()}",
+                    headers=headers,
+                )
+                if rd.status_code == 200:
+                    body = _notion_ok_json(rd, "reading the data source schema")
+                    dsp = body.get("properties")
+                    if isinstance(dsp, dict) and _notion_title_property_from_schema(dsp):
+                        return title_prop, dsp
+    return title_prop, _notion_schema_from_page_properties(props)
+
+
+async def _notion_list_block_children_all(
+    client: httpx.AsyncClient, token: str, block_id: str
+) -> list[dict]:
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Notion-Version": NOTION_API_VERSION,
+    }
+    out: list[dict] = []
+    cursor: str | None = None
+    url = f"https://api.notion.com/v1/blocks/{block_id}/children"
+    while True:
+        params: dict[str, str | int] = {"page_size": 100}
+        if cursor:
+            params["start_cursor"] = cursor
+        r = await client.get(url, headers=headers, params=params)
+        if r.status_code != 200:
+            _notion_api_error(r, "listing page blocks")
+        data = _notion_ok_json(r, "listing page blocks")
+        for item in data.get("results") or []:
+            if isinstance(item, dict):
+                out.append(item)
+        if not data.get("has_more"):
+            break
+        nxt = data.get("next_cursor")
+        if not isinstance(nxt, str) or not nxt.strip():
+            break
+        cursor = nxt
+    return out
+
+
+async def _notion_delete_block(
+    client: httpx.AsyncClient, token: str, block_id: str
+) -> None:
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Notion-Version": NOTION_API_VERSION,
+    }
+    r = await client.delete(f"https://api.notion.com/v1/blocks/{block_id}", headers=headers)
+    if r.status_code not in (200, 404):
+        _notion_api_error(r, "removing old page content")
+
+
+async def _notion_clear_page_children(
+    client: httpx.AsyncClient,
+    token: str,
+    page_id: str,
+    *,
+    warnings: list[str],
+) -> None:
+    children = await _notion_list_block_children_all(client, token, page_id)
+    for b in children:
+        bid = b.get("id")
+        if not isinstance(bid, str):
+            continue
+        if b.get("has_children"):
+            await _notion_clear_page_children(client, token, bid, warnings=warnings)
+        await _notion_delete_block(client, token, bid)
+    if children:
+        warnings.append("Existing block content under this page was removed and replaced.")
 
 
 async def _notion_segments_to_api_blocks(
@@ -774,4 +969,115 @@ async def _notion_segments_to_api_blocks(
                     _notion_paragraph_block(f"[Image not exported: {seg['path']}]")
                 )
     return blocks
+
+
+def _notion_blocks_sdk_shape(blocks: list[dict]) -> list[dict]:
+    """Omit top-level `object` on blocks (matches JS SDK / some API gateways)."""
+    out: list[dict] = []
+    for b in blocks:
+        if isinstance(b, dict) and "object" in b:
+            out.append({k: v for k, v in b.items() if k != "object"})
+        elif isinstance(b, dict):
+            out.append(b)
+    return out
+
+
+async def _notion_append_block_children_chunks(
+    client: httpx.AsyncClient,
+    token: str,
+    page_id: str,
+    blocks: list[dict],
+    notion_version: str,
+    *,
+    warnings: list[str],
+) -> None:
+    """Append blocks to an existing page (chunked; retry without `object` if needed)."""
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Notion-Version": notion_version,
+        "Content-Type": "application/json",
+    }
+    url = f"https://api.notion.com/v1/blocks/{page_id}/children"
+    for off in range(0, len(blocks), 100):
+        chunk = blocks[off : off + 100]
+        ra = await client.patch(url, headers=headers, json={"children": chunk})
+        if ra.status_code != 200:
+            chunk2 = _notion_blocks_sdk_shape(chunk)
+            ra = await client.patch(url, headers=headers, json={"children": chunk2})
+            if ra.status_code == 200:
+                warnings.append(
+                    "Page content was appended using a compatible block shape (retried without "
+                    "`object` on blocks)."
+                )
+            else:
+                _notion_api_error(ra, "adding page content blocks")
+
+
+async def export_notion_page_markdown(
+    client: httpx.AsyncClient,
+    token: str,
+    page_id: str,
+    md: str,
+    *,
+    resolved_title: str,
+    images_b64: dict[str, str],
+    extra_properties: dict[str, str],
+) -> list[str]:
+    """PATCH title/properties, clear block tree, append Markdown → Notion blocks."""
+    export_warnings: list[str] = []
+    md = (md or "").strip()
+    if images_b64:
+        md = _notion_restore_data_uri_images(md, images_b64)
+    segments = _parse_markdown_to_notion_segments(md)
+    if not segments and md.strip():
+        segments = [{"type": "paragraph", "text": md.strip()}]
+
+    title_prop, props_schema = await _notion_resolve_page_inspect(client, token, page_id)
+    props_payload: dict[str, dict] = {
+        title_prop: {
+            "title": [
+                {
+                    "type": "text",
+                    "text": {"content": resolved_title[:2000]},
+                }
+            ],
+        },
+    }
+    props_payload.update(
+        _notion_merge_extra_properties(
+            props_schema,
+            title_prop,
+            dict(extra_properties),
+            warnings=export_warnings,
+        )
+    )
+
+    blocks = await _notion_segments_to_api_blocks(
+        client, token, segments, images_b64, export_warnings
+    )
+    if not blocks and md.strip():
+        blocks = [_notion_paragraph_block(md.strip())]
+
+    r = await client.patch(
+        f"https://api.notion.com/v1/pages/{page_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Notion-Version": NOTION_API_VERSION,
+            "Content-Type": "application/json",
+        },
+        json={"properties": props_payload},
+    )
+    if r.status_code != 200:
+        _notion_api_error(r, "updating the page")
+
+    await _notion_clear_page_children(client, token, page_id, warnings=export_warnings)
+    await _notion_append_block_children_chunks(
+        client,
+        token,
+        page_id,
+        blocks,
+        NOTION_API_VERSION,
+        warnings=export_warnings,
+    )
+    return export_warnings
 
