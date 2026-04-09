@@ -1042,6 +1042,7 @@
       .view-pane-body {
         flex: 1;
         min-height: 0;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -1236,12 +1237,34 @@
       .preview-md-host {
         flex: 1;
         min-height: 0;
+        min-width: 0;
+        width: 100%;
         display: flex;
         flex-direction: column;
       }
       .preview-md-host .notion-canvas {
         flex: 1;
         min-height: 0;
+        min-width: 0;
+      }
+      .preview-md-host .notion-scroll {
+        padding: 20px max(12px, env(safe-area-inset-left, 0px)) 64px
+          max(12px, env(safe-area-inset-right, 0px));
+        box-sizing: border-box;
+      }
+      .preview-md-host .notion-page {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        box-sizing: border-box;
+        padding: 36px clamp(16px, 3.5vw, 56px) 72px;
+      }
+      .preview-md-host .notion-placeholder {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        padding: 8px clamp(16px, 3.5vw, 56px) 0;
+        box-sizing: border-box;
       }
 
       .workspace-body {
