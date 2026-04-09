@@ -48,6 +48,11 @@ class AgentBlockNoteRequest(BaseModel):
         max_length=4000,
         description="User-defined note formatting rules.",
     )
+    instructions: str = Field(
+        default="",
+        max_length=4000,
+        description="Standing instructions appended to every agent note request.",
+    )
     instruction_prefix: str | None = Field(
         default=None,
         max_length=4000,
@@ -80,12 +85,89 @@ class AgentBlockClarifyRequest(BaseModel):
         description="Multiple excerpts as one combined context.",
     )
     messages: list[AgentChatMessage] = Field(..., min_length=1)
+    instructions: str = Field(
+        default="",
+        max_length=4000,
+        description="Standing instructions appended to every clarify request.",
+    )
     provider: Literal["mistral", "ollama"] = "mistral"
     model: str | None = None
     mistral_api_key: str | None = Field(default=None, max_length=512)
 
     @model_validator(mode="after")
     def _block_or_blocks_clarify(self) -> "AgentBlockClarifyRequest":
+        if self.blocks is not None and len(self.blocks) > 0:
+            return self
+        if self.block is not None:
+            return self
+        raise ValueError("Provide 'block' or a non-empty 'blocks' array.")
+
+
+class AgentBlockExplainReplaceRequest(BaseModel):
+    """Replace selected block(s) with an LLM-generated explanatory Markdown section."""
+
+    document_id: str = Field(..., min_length=1)
+    block: AgentBlockExcerpt | None = Field(
+        default=None,
+        description="Single excerpt; omit when sending non-empty blocks.",
+    )
+    blocks: list[AgentBlockExcerpt] | None = Field(
+        default=None,
+        max_length=32,
+        description="Multiple excerpts merged into one replacement.",
+    )
+    user_task: str = Field(
+        default="",
+        max_length=8000,
+        description="What to produce (e.g. explain clearly); server may default if empty.",
+    )
+    instructions: str = Field(
+        default="",
+        max_length=4000,
+        description="Standing instructions appended to this request.",
+    )
+    provider: Literal["mistral", "ollama"] = "mistral"
+    model: str | None = None
+    mistral_api_key: str | None = Field(default=None, max_length=512)
+
+    @model_validator(mode="after")
+    def _block_or_blocks_explain_replace(self) -> "AgentBlockExplainReplaceRequest":
+        if self.blocks is not None and len(self.blocks) > 0:
+            return self
+        if self.block is not None:
+            return self
+        raise ValueError("Provide 'block' or a non-empty 'blocks' array.")
+
+
+class AgentBlockBeautifyRequest(BaseModel):
+    """Beautify selected Markdown using plain text extracted from the session PDF."""
+
+    document_id: str = Field(..., min_length=1)
+    block: AgentBlockExcerpt | None = Field(
+        default=None,
+        description="Single excerpt; omit when sending non-empty blocks.",
+    )
+    blocks: list[AgentBlockExcerpt] | None = Field(
+        default=None,
+        max_length=32,
+        description="Multiple excerpts merged into one beautified region.",
+    )
+    user_task: str = Field(
+        default="",
+        max_length=8000,
+        description="Optional extra instructions; server defaults if empty.",
+    )
+    instructions: str = Field(
+        default="",
+        max_length=4000,
+        description="Standing instructions appended to this request.",
+    )
+    provider: Literal["mistral", "ollama"] = "mistral"
+    model: str | None = None
+    mistral_api_key: str | None = Field(default=None, max_length=512)
+
+    @model_validator(mode="after")
+    def _block_or_blocks_beautify(self) -> "AgentBlockBeautifyRequest":
         if self.blocks is not None and len(self.blocks) > 0:
             return self
         if self.block is not None:

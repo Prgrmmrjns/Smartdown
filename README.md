@@ -56,7 +56,11 @@ Python **3.12+** is required (see `pyproject.toml`).
 | Shortcut | Action |
 |----------|--------|
 | **Mod+B** | **Add bullet** — LLM note for selected block(s) (use row checkboxes or focus a block). |
-| **Mod+E** | **Explain** — open AI chat for the current / selected block(s). |
+| **Mod+E** | **Explain** — open the Explain chat for the current / selected block(s); optional message or Send for a default. |
+| **Mod+R** | **Explain and replace** — open the same chat in replace mode; optional instructions, then Replace. |
+| **Mod+A** | In the notes preview (not inside a text field), **select all sections** (row checkboxes) for whole-document AI actions. |
+| **Mod+U** | **Unselect all** section checkboxes (same scope as Mod+A). |
+| **Mod+F** | **Format section** — improve Markdown for the selection using the PDF source text. |
 | **Mod+Z** / **Mod+Shift+Z** | **Undo / redo** Markdown (works when the notes preview is active; not while typing in the sidebar chat or other sidebar fields). |
 | **Delete** or **Backspace** | **Delete** selected blocks (checkboxes), or the block under focus when allowed. |
 | **Mod+M** | While editing inside a block, **merge** that block with the **next** one. |
@@ -66,9 +70,9 @@ Python **3.12+** is required (see `pyproject.toml`).
 
 With the caret in a block in the rendered notes, typing patterns such as `#` … **space**, `-` **space**, `1.` **space**, `>` **space** can expand into headings, lists, blockquotes, etc. (see in-app behavior).
 
-### AI chat input
+### Explain chat (sidebar)
 
-- **Enter** — send the message.  
+- **Enter** — send (or run Replace in replace mode).  
 - **Shift+Enter** — new line.
 
 ---

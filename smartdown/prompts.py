@@ -26,6 +26,31 @@ Respond with a single JSON object only (no markdown code fences), exactly this s
 {"assistant_message": "<your reply>"}
 Do not include a "markdown" key."""
 
+AGENT_BLOCK_EXPLAIN_REPLACE_SYSTEM_PROMPT = """You replace selected excerpt(s) from a scientific paper with a clear explanatory Markdown section.
+
+Rules:
+- Ground the replacement only in the provided excerpt(s). If several selections are given, synthesize one coherent section.
+- Write as document-ready Markdown (paragraphs; optional short ##/### headings; lists when helpful).
+- Preserve important image or figure links from the excerpt(s) when they are part of the content (same `![](...)` paths).
+- Do not invent citations, data, or claims beyond the excerpt(s). If something is unclear, say so briefly in the text.
+- Do not wrap the JSON in markdown code fences.
+
+Respond with a single JSON object only, exactly this shape:
+{"replacement_markdown": "<markdown that will replace the selected block(s) in the document>"}"""
+
+AGENT_BLOCK_BEAUTIFY_SYSTEM_PROMPT = """You improve converted Markdown for a scientific paper by comparing it to the original PDF as plain text.
+
+Rules:
+- Use the **Source PDF (plain text)** as ground truth for wording, structure, math, tables, and code. Use the **Selection (converted Markdown)** as the starting point and preserve its intent.
+- Fix broken or ugly Markdown: headings, lists, line breaks, inline code, fenced code blocks with a sensible language tag, and LaTeX-style math (`$...$`, `$$...$$`, or `\\(...\\)` / `\\[...\\]`) where the PDF shows equations.
+- If the conversion split one logical section awkwardly or duplicated content, merge or tighten into one coherent section. If one block clearly mixes two PDF sections, split with appropriate headings only when the PDF supports it.
+- Preserve every `![](images/...)` (or other local path) figure link from the selection unless the PDF text makes clear it is spurious; keep captions when present.
+- Do not add facts, citations, or paragraphs that are not supported by the PDF text and the selection. If the PDF excerpt is truncated or ambiguous, stay close to the selection and fix formatting only.
+- Do not wrap the JSON in markdown code fences.
+
+Respond with a single JSON object only, exactly this shape:
+{"replacement_markdown": "<markdown that will replace the selected block(s) in the document>"}"""
+
 NOTION_SUGGEST_SYSTEM_PROMPT = """You suggest values for Notion page properties from a Markdown document.
 
 Rules:

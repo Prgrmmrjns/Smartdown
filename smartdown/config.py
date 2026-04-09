@@ -64,6 +64,19 @@ OLLAMA_SCHEMA_BLOCK_NOTE: dict = {
     },
     "required": ["note_markdown", "assistant_message"],
 }
+OLLAMA_SCHEMA_EXPLAIN_REPLACE: dict = {
+    "type": "object",
+    "properties": {
+        "replacement_markdown": {
+            "type": "string",
+            "description": (
+                "Markdown that replaces the selected block(s): a clear explanation grounded in the excerpt(s), "
+                "suitable for the document (paragraphs, short headings, lists as needed)."
+            ),
+        },
+    },
+    "required": ["replacement_markdown"],
+}
 OLLAMA_SCHEMA_NOTION_PROPS: dict = {
     "type": "object",
     "properties": {

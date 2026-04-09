@@ -368,6 +368,15 @@ def _parse_qa_payload(content: str) -> str:
     return msg.strip()
 
 
+def _parse_explain_replace_payload(content: str) -> str:
+    raw = _strip_json_fence(content)
+    data = _loads_llm_json_object(raw)
+    md = data.get("replacement_markdown")
+    if not isinstance(md, str) or not md.strip():
+        raise ValueError('JSON must include non-empty string "replacement_markdown"')
+    return md.strip()
+
+
 def _parse_notion_suggest_payload(content: str) -> tuple[dict[str, str], str]:
     raw = _strip_json_fence(content)
     data = _loads_llm_json_object(raw)

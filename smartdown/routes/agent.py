@@ -4,15 +4,33 @@ from typing import Protocol
 
 from fastapi import FastAPI, HTTPException
 
-from smartdown.config import OLLAMA_SCHEMA_BLOCK_NOTE, OLLAMA_SCHEMA_QA
+from smartdown.config import (
+    OLLAMA_SCHEMA_BLOCK_NOTE,
+    OLLAMA_SCHEMA_EXPLAIN_REPLACE,
+    OLLAMA_SCHEMA_QA,
+)
 from smartdown.llm_context import (
+    _max_doc_chars_for_model,
+    _merge_dropped_images,
     _parse_block_note_payload,
+    _parse_explain_replace_payload,
     _parse_qa_payload,
     _shrink_markdown_for_mistral_prompt,
 )
 from smartdown.llm_providers import _llm_chat_json, _resolve_llm
-from smartdown.models import AgentBlockClarifyRequest, AgentBlockExcerpt, AgentBlockNoteRequest
-from smartdown.prompts import AGENT_BLOCK_NOTE_SYSTEM_PROMPT, AGENT_BLOCK_QA_SYSTEM_PROMPT
+from smartdown.models import (
+    AgentBlockBeautifyRequest,
+    AgentBlockClarifyRequest,
+    AgentBlockExcerpt,
+    AgentBlockExplainReplaceRequest,
+    AgentBlockNoteRequest,
+)
+from smartdown.prompts import (
+    AGENT_BLOCK_BEAUTIFY_SYSTEM_PROMPT,
+    AGENT_BLOCK_EXPLAIN_REPLACE_SYSTEM_PROMPT,
+    AGENT_BLOCK_NOTE_SYSTEM_PROMPT,
+    AGENT_BLOCK_QA_SYSTEM_PROMPT,
+)
 from smartdown.session import _purge_expired_sessions, _session_lock, _sessions
 
 _DEFAULT_NOTE_FMT = (
@@ -61,10 +79,26 @@ async def _assert_session(document_id: str) -> None:
         )
 
 
+async def _pdf_plain_for_session(document_id: str) -> str:
+    async with _session_lock:
+        _purge_expired_sessions()
+        s = _sessions.get(document_id)
+    if not s or not s.pdf_plain_text:
+        return ""
+    return s.pdf_plain_text.strip()
+
+
 def _mistral_shrink(prov: str, text: str) -> tuple[str, str]:
     if prov == "mistral":
         return _shrink_markdown_for_mistral_prompt(text)
     return text, ""
+
+
+def _user_instructions_block(instructions: str) -> str:
+    t = (instructions or "").strip()
+    if not t:
+        return ""
+    return f"## User instructions (apply to this request)\n\n{t}\n\n"
 
 
 def register(app: FastAPI) -> None:
@@ -87,7 +121,8 @@ def register(app: FastAPI) -> None:
             else ""
         )
         user_content = (
-            f"## Note format instructions\n\n{fmt}\n{scale}\n{shrink_extra}"
+            _user_instructions_block(body.instructions)
+            + f"## Note format instructions\n\n{fmt}\n{scale}\n{shrink_extra}"
             f"## Selected excerpt(s)\n\n{combined}\n"
         )
         msgs = [
@@ -128,7 +163,8 @@ def register(app: FastAPI) -> None:
         conv_block = "\n".join(conv_lines) if conv_lines else "(no prior messages)"
         combined, shrink_extra = _mistral_shrink(prov, _combined_excerpts_markdown(_excerpts(body)))
         user_content = (
-            f"## Prior conversation\n{conv_block}\n\n{shrink_extra}"
+            _user_instructions_block(body.instructions)
+            + f"## Prior conversation\n{conv_block}\n\n{shrink_extra}"
             f"## Selected excerpt(s)\n\n{combined}\n\n## User question\n\n{last_user}\n\n"
             'Reply with JSON only: {"assistant_message": "your answer here"}'
         )
@@ -150,3 +186,100 @@ def register(app: FastAPI) -> None:
         except ValueError as e:
             raise HTTPException(status_code=502, detail=str(e)) from e
         return {"assistant_message": assistant_message}
+
+    @app.post("/api/agent-block-explain-replace")
+    async def api_agent_block_explain_replace(body: AgentBlockExplainReplaceRequest):
+        prov, model_id = await _resolve_llm(body.provider, body.model)
+        await _assert_session(body.document_id)
+        task = (body.user_task or "").strip()
+        if not task:
+            task = (
+                "Explain the selected excerpt(s) clearly in Markdown suitable for study notes. "
+                "Replace the original block content conceptually with this explanation."
+            )
+        combined, shrink_extra = _mistral_shrink(prov, _combined_excerpts_markdown(_excerpts(body)))
+        user_content = (
+            _user_instructions_block(body.instructions)
+            + f"## Task\n\n{task}\n\n{shrink_extra}"
+            f"## Selected excerpt(s)\n\n{combined}\n\n"
+            'Reply with JSON only: {"replacement_markdown": "…"}'
+        )
+        api_messages = [
+            {"role": "system", "content": AGENT_BLOCK_EXPLAIN_REPLACE_SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ]
+        try:
+            raw = await _llm_chat_json(
+                prov,
+                model_id,
+                api_messages,
+                ollama_schema=OLLAMA_SCHEMA_EXPLAIN_REPLACE,
+                mistral_api_key=body.mistral_api_key,
+            )
+            replacement_md = _parse_explain_replace_payload(raw)
+        except HTTPException:
+            raise
+        except ValueError as e:
+            raise HTTPException(status_code=502, detail=str(e)) from e
+        return {"replacement_markdown": replacement_md}
+
+    @app.post("/api/agent-block-beautify")
+    async def api_agent_block_beautify(body: AgentBlockBeautifyRequest):
+        prov, model_id = await _resolve_llm(body.provider, body.model)
+        await _assert_session(body.document_id)
+        pdf_plain = await _pdf_plain_for_session(body.document_id)
+        if not pdf_plain:
+            raise HTTPException(
+                status_code=400,
+                detail="No plain-text source is available for this PDF. Import the document again.",
+            )
+        items = _excerpts(body)
+        original_for_images = "\n\n---\n\n".join(e.markdown.strip() for e in items)
+        combined, shrink_extra = _mistral_shrink(prov, _combined_excerpts_markdown(items))
+        overhead = 8000
+        budget = _max_doc_chars_for_model() - len(combined) - len(shrink_extra) - overhead
+        budget = max(12_000, min(budget, 200_000))
+        pdf_part = _cap_excerpt(pdf_plain, max_chars=budget)
+        pdf_note = ""
+        if len(pdf_plain) > budget:
+            pdf_note = (
+                "\n\n### Note\nThe source PDF text is truncated to fit the model context; "
+                "fix formatting using the visible portion.\n"
+            )
+        task = (body.user_task or "").strip()
+        if not task:
+            task = (
+                "Compare the PDF source text with the converted Markdown selection and output beautified Markdown "
+                "that replaces the selection (fix math, code, and structure; merge or split sections when justified)."
+            )
+        user_content = (
+            _user_instructions_block(body.instructions)
+            + pdf_note
+            + shrink_extra
+            + f"## Task\n\n{task}\n\n"
+            + "## Source PDF (plain text)\n\n"
+            + pdf_part
+            + "\n\n## Selection (converted Markdown)\n\n"
+            + combined
+            + "\n\n"
+            + 'Reply with JSON only: {"replacement_markdown": "…"}'
+        )
+        api_messages = [
+            {"role": "system", "content": AGENT_BLOCK_BEAUTIFY_SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ]
+        try:
+            raw = await _llm_chat_json(
+                prov,
+                model_id,
+                api_messages,
+                ollama_schema=OLLAMA_SCHEMA_EXPLAIN_REPLACE,
+                mistral_api_key=body.mistral_api_key,
+            )
+            replacement_md = _parse_explain_replace_payload(raw)
+            replacement_md = _merge_dropped_images(original_for_images, replacement_md)
+        except HTTPException:
+            raise
+        except ValueError as e:
+            raise HTTPException(status_code=502, detail=str(e)) from e
+        return {"replacement_markdown": replacement_md}
